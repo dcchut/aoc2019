@@ -5,7 +5,7 @@ mod questions;
 
 fn main() {
     // TODO: make a macro to do  this for me
-    let solutions: Vec<Box<dyn Solution>> = vec![Box::new(Q1 {})];
+    let solutions: Vec<Box<dyn Solution>> = vec![Box::new(Q1 {}), Box::new(Q2 {})];
 
     let reply = rprompt::prompt_reply_stdout("Problem: ").unwrap();
 
