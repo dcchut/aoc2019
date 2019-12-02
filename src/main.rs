@@ -4,7 +4,7 @@ use aoc2019::Solution;
 mod questions;
 
 fn main() {
-    // TODO: make a macro to do this for me
+    // TODO: make a macro to do  this for me
     let solutions: Vec<Box<dyn Solution>> = vec![Box::new(Q1 {})];
 
     let reply = rprompt::prompt_reply_stdout("Problem: ").unwrap();
