@@ -8,7 +8,7 @@ pub trait Extract<T> {
 
 #[derive(Debug, Clone)]
 pub struct ProblemInput {
-    lines: Vec<String>,
+    pub lines: Vec<String>,
 }
 
 impl ProblemInput {
