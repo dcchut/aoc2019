@@ -15,6 +15,35 @@ pub struct ProblemInput {
     pub lines: Vec<String>,
 }
 
+pub trait Digits {
+    fn digits(&self) -> Vec<i64>; // TODO: maybe consider a different return type here (usize? digit?)
+}
+
+impl Digits for i64 {
+    fn digits(&self) -> Vec<i64> {
+        self.to_string()
+            .chars()
+            .map(|v| v.to_digit(10).unwrap() as i64)
+            .collect()
+    }
+}
+
+pub trait FromDigits {
+    fn from_digits(&self) -> i64;
+}
+
+impl FromDigits for Vec<i64> {
+    fn from_digits(&self) -> i64 {
+        self.iter()
+            .cloned()
+            .map(|v| v.to_string())
+            .collect::<Vec<_>>()
+            .join("")
+            .parse()
+            .unwrap()
+    }
+}
+
 impl ProblemInput {
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
         let path = path.as_ref();
@@ -73,6 +102,18 @@ impl Extract<Vec<i64>> for ProblemInput {
         let inner: Vec<Vec<i64>> = self.extract()?;
 
         Ok(inner.into_iter().flatten().collect())
+    }
+}
+
+impl From<Vec<String>> for ProblemInput {
+    fn from(lines: Vec<String>) -> Self {
+        Self { lines }
+    }
+}
+
+impl From<Vec<&str>> for ProblemInput {
+    fn from(lines: Vec<&str>) -> Self {
+        Self::from(lines.into_iter().map(String::from).collect::<Vec<_>>())
     }
 }
 

@@ -1,10 +1,11 @@
-use crate::{Extract, ProblemInput};
+use crate::{Digits, Extract, FromDigits, ProblemInput};
 use anyhow::Result;
 use std::collections::HashMap;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 pub enum ICFinalization {
     Continue,
+    NoMove,
     Terminate,
 }
 
@@ -15,11 +16,22 @@ pub struct ICState {
 
     /// The current instruction pointer
     pub ip: usize,
+
+    /// A collection of inputs
+    pub inputs: Vec<i64>,
+
+    /// A collection of outputs
+    pub outputs: Vec<i64>,
 }
 
 impl ICState {
     pub fn new(memory: Vec<i64>) -> Self {
-        Self { memory, ip: 0 }
+        Self {
+            memory,
+            ip: 0,
+            outputs: Vec::new(),
+            inputs: Vec::new(),
+        }
     }
 
     #[inline(always)]
@@ -43,12 +55,44 @@ impl ICState {
     }
 }
 
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+pub enum ICMode {
+    Position,
+    Immediate,
+}
+
+#[derive(Debug, Copy, Clone, Hash)]
+pub struct ICCode {
+    value: i64,
+    mode: ICMode,
+}
+
+impl ICCode {
+    pub fn value(&self, state: &ICState) -> i64 {
+        // evaluate the current code at the given state
+        match self.mode {
+            ICMode::Position => state.get_state(self.value as usize),
+            ICMode::Immediate => self.value,
+        }
+    }
+}
+
+impl From<i64> for ICMode {
+    fn from(x: i64) -> Self {
+        if x == 1 {
+            ICMode::Immediate
+        } else {
+            ICMode::Position
+        }
+    }
+}
+
 pub struct ICInstruction {
     /// How many parameters this instruction accepts
     parameters: usize,
 
     /// A function for evaluating the given instruction
-    evaluate: Box<dyn Fn(&mut ICState, Vec<i64>) -> ICFinalization>,
+    evaluate: Box<dyn Fn(&mut ICState, Vec<ICCode>) -> ICFinalization>,
 }
 
 pub struct ICInterpreter {
@@ -63,84 +107,181 @@ pub struct ICInterpreter {
 }
 
 impl ICInterpreter {
+    pub fn register<F>(&mut self, key: i64, parameters: usize, f: F)
+    where
+        F: 'static + Fn(&mut ICState, Vec<ICCode>) -> ICFinalization,
+    {
+        // Box our closure up, together with an assertion that it receives the correct number of arguments
+        let evaluate = Box::new(move |state: &mut ICState, args: Vec<ICCode>| {
+            assert_eq!(args.len(), parameters);
+
+            f(state, args)
+        });
+
+        let instruction = ICInstruction {
+            parameters,
+            evaluate,
+        };
+
+        self.instructions.insert(key, instruction);
+    }
     pub fn new(memory: Vec<i64>) -> Self {
-        let mut instructions = HashMap::new();
-
-        // Add instruction
-        let add_inst = ICInstruction {
-            parameters: 3,
-            evaluate: Box::new(|state, args| {
-                assert_eq!(args.len(), 3); // expect exactly 3 arguments
-
-                // we want to store s + t in state.memory[u]
-                let s = state.memory[args[0] as usize];
-                let t = state.memory[args[1] as usize];
-
-                state.memory[args[2] as usize] = s + t;
-
-                ICFinalization::Continue
-            }),
-        };
-
-        instructions.insert(1, add_inst);
-
-        // Mul instruction
-        let mul_inst = ICInstruction {
-            parameters: 3,
-            evaluate: Box::new(|state, args| {
-                assert_eq!(args.len(), 3); // expect exactly 3 arguments
-
-                // we want to store s + t in state.memory[u]
-                let s = state.memory[args[0] as usize];
-                let t = state.memory[args[1] as usize];
-
-                state.memory[args[2] as usize] = s * t;
-
-                ICFinalization::Continue
-            }),
-        };
-
-        instructions.insert(2, mul_inst);
-
-        // Terminate instruction
-        let term_inst = ICInstruction {
-            parameters: 0,
-            evaluate: Box::new(|_, _| ICFinalization::Terminate),
-        };
-
-        instructions.insert(99, term_inst);
-
-        Self {
+        let mut interpreter = Self {
             initial_state: ICState::new(memory.clone()),
             state: ICState::new(memory),
-            instructions,
-        }
+            instructions: HashMap::new(),
+        };
+
+        // Add instruction
+        interpreter.register(1, 3, |state, args| {
+            let s = args[0].value(state);
+            let t = args[1].value(state);
+
+            state.memory[args[2].value as usize] = s + t;
+
+            ICFinalization::Continue
+        });
+
+        // Mul instruction
+        interpreter.register(2, 3, |state, args| {
+            let s = args[0].value(state);
+            let t = args[1].value(state);
+            state.memory[args[2].value as usize] = s * t;
+
+            ICFinalization::Continue
+        });
+
+        // Terminate instruction
+        interpreter.register(99, 0, |_, _| ICFinalization::Terminate);
+
+        // Input instruction
+        interpreter.register(3, 1, |state, args| {
+            state.memory[args[0].value as usize] = state.inputs.pop().unwrap();
+
+            ICFinalization::Continue
+        });
+
+        // Output instruction
+        interpreter.register(4, 1, |state, args| {
+            state.outputs.push(args[0].value(state));
+
+            ICFinalization::Continue
+        });
+
+        // jump-if-true instruction
+        interpreter.register(5, 2, |state, args| {
+            let u = args[0].value(state);
+            let v = args[1].value(state);
+
+            if u != 0 {
+                state.ip = v as usize;
+
+                ICFinalization::NoMove
+            } else {
+                ICFinalization::Continue
+            }
+        });
+
+        // jump_if_false instruction
+        interpreter.register(6, 2, |state, args| {
+            let u = args[0].value(state);
+            let v = args[1].value(state);
+
+            if u == 0 {
+                state.ip = v as usize;
+
+                ICFinalization::NoMove
+            } else {
+                ICFinalization::Continue
+            }
+        });
+
+        // lt instruction
+        interpreter.register(7, 3, |state, args| {
+            let s = args[0].value(state);
+            let t = args[1].value(state);
+
+            state.memory[args[2].value as usize] = if s < t { 1 } else { 0 };
+
+            ICFinalization::Continue
+        });
+
+        // eq instruction
+        interpreter.register(8, 3, |state, args| {
+            let s = args[0].value(state);
+            let t = args[1].value(state);
+
+            state.memory[args[2].value as usize] = if s == t { 1 } else { 0 };
+
+            ICFinalization::Continue
+        });
+
+        interpreter
     }
 
     pub fn reset(&mut self) {
         self.state = self.initial_state.clone();
     }
 
-    pub fn register(&mut self, key: i64, inst: ICInstruction) {
-        self.instructions.insert(key, inst);
-    }
+    pub fn run(&mut self, inputs: Vec<i64>) -> ICState {
+        // Inject the given inputs into the state
+        self.state.inputs = inputs;
 
-    pub fn run(&mut self) -> ICState {
         loop {
             // get the current instruction key
             let key = self.state.get_current_state();
-            let inst = self.instructions.get_mut(&key).unwrap();
+
+            // process the key into an ICCode
+            let mut digits = key.digits();
+
+            // last two digits are the opcode
+            let opcode = {
+                if digits.len() == 1 {
+                    vec![digits.pop().unwrap()]
+                } else {
+                    let u = digits.pop().unwrap();
+                    let v = digits.pop().unwrap();
+
+                    vec![v, u]
+                }
+            }
+            .from_digits();
+
+            let inst = self.instructions.get(&opcode).unwrap();
 
             // collect the arguments
             let args = self.state.get_parameters(inst.parameters);
 
+            // Now for each argument, determine its mode
+            let mut ic_args = Vec::with_capacity(args.len());
+
+            for arg in args {
+                // Get the corresopnding parameter mode specifier
+                let parameter_mode = {
+                    if let Some(mode) = digits.pop() {
+                        mode
+                    } else {
+                        0
+                    }
+                };
+
+                // Add the argument
+                ic_args.push(ICCode {
+                    value: arg,
+                    mode: ICMode::from(parameter_mode),
+                });
+            }
+
+            let inst = self.instructions.get_mut(&opcode).unwrap();
+
             // evaluate the instruction
-            let result = (inst.evaluate)(&mut self.state, args);
+            let result = (inst.evaluate)(&mut self.state, ic_args);
 
             match result {
                 ICFinalization::Continue => {
                     self.state.jump_by(inst.parameters + 1);
                 }
+                ICFinalization::NoMove => {}
                 ICFinalization::Terminate => {
                     break;
                 }
