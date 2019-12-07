@@ -7,3 +7,4 @@ edition = "2018"
 [dependencies]
 rprompt = "1.0"
 anyhow = "1.0"
+rayon = "1.2.1"

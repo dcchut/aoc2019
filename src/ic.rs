@@ -1,6 +1,9 @@
 use crate::{Digits, Extract, FromDigits, ProblemInput};
 use anyhow::Result;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
+use std::ops::Deref;
+use std::rc::Rc;
+use std::sync::RwLock;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 pub enum ICFinalization {
@@ -18,7 +21,7 @@ pub struct ICState {
     pub ip: usize,
 
     /// A collection of inputs
-    pub inputs: Vec<i64>,
+    pub inputs: Rc<RwLock<InterpreterInput>>,
 
     /// A collection of outputs
     pub outputs: Vec<i64>,
@@ -30,7 +33,7 @@ impl ICState {
             memory,
             ip: 0,
             outputs: Vec::new(),
-            inputs: Vec::new(),
+            inputs: Rc::new(RwLock::new(InterpreterInput::new())),
         }
     }
 
@@ -84,6 +87,20 @@ impl From<i64> for ICMode {
         } else {
             ICMode::Position
         }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ICTerminalState {
+    state: ICState,
+    pub last_instruction: usize,
+}
+
+impl Deref for ICTerminalState {
+    type Target = ICState;
+
+    fn deref(&self) -> &Self::Target {
+        &self.state
     }
 }
 
@@ -156,7 +173,7 @@ impl ICInterpreter {
 
         // Input instruction
         interpreter.register(3, 1, |state, args| {
-            state.memory[args[0].value as usize] = state.inputs.pop().unwrap();
+            state.memory[args[0].value as usize] = state.inputs.write().unwrap().pop();
 
             ICFinalization::Continue
         });
@@ -165,7 +182,7 @@ impl ICInterpreter {
         interpreter.register(4, 1, |state, args| {
             state.outputs.push(args[0].value(state));
 
-            ICFinalization::Continue
+            ICFinalization::Terminate
         });
 
         // jump-if-true instruction
@@ -223,9 +240,10 @@ impl ICInterpreter {
         self.state = self.initial_state.clone();
     }
 
-    pub fn run(&mut self, inputs: Vec<i64>) -> ICState {
+    pub fn run_with_inputs(&mut self, inputs: &Rc<RwLock<InterpreterInput>>) -> ICTerminalState {
         // Inject the given inputs into the state
-        self.state.inputs = inputs;
+        self.state.inputs = Rc::clone(inputs);
+        let mut opcode;
 
         loop {
             // get the current instruction key
@@ -235,7 +253,7 @@ impl ICInterpreter {
             let mut digits = key.digits();
 
             // last two digits are the opcode
-            let opcode = {
+            opcode = {
                 if digits.len() == 1 {
                     vec![digits.pop().unwrap()]
                 } else {
@@ -277,18 +295,28 @@ impl ICInterpreter {
             // evaluate the instruction
             let result = (inst.evaluate)(&mut self.state, ic_args);
 
+            // Update the instruction pointer
             match result {
                 ICFinalization::Continue => {
                     self.state.jump_by(inst.parameters + 1);
                 }
                 ICFinalization::NoMove => {}
                 ICFinalization::Terminate => {
+                    self.state.jump_by(inst.parameters + 1);
                     break;
                 }
             }
         }
 
-        self.state.clone()
+        ICTerminalState {
+            state: self.state.clone(),
+            last_instruction: opcode as usize,
+        }
+    }
+
+    pub fn run(&mut self, inputs: Vec<i64>) -> ICTerminalState {
+        let inputs = Rc::new(RwLock::new(inputs.into()));
+        self.run_with_inputs(&inputs)
     }
 }
 
@@ -304,5 +332,47 @@ impl Extract<ICInterpreter> for ProblemInput {
         let inner: Vec<i64> = self.extract()?;
 
         Ok(ICInterpreter::new(inner))
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct InterpreterInput {
+    pub buffer: VecDeque<i64>,
+}
+
+impl InterpreterInput {
+    pub fn single(single: i64) -> Self {
+        let mut buffer = VecDeque::new();
+        buffer.push_front(single);
+
+        Self { buffer }
+    }
+
+    pub fn new() -> Self {
+        Self {
+            buffer: VecDeque::new(),
+        }
+    }
+
+    pub fn add(&mut self, input: i64) {
+        self.buffer.push_back(input);
+    }
+
+    pub fn pop(&mut self) -> i64 {
+        self.buffer.pop_front().unwrap()
+    }
+}
+
+impl Default for InterpreterInput {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl From<Vec<i64>> for InterpreterInput {
+    fn from(buffer: Vec<i64>) -> Self {
+        Self {
+            buffer: buffer.into_iter().collect(),
+        }
     }
 }
