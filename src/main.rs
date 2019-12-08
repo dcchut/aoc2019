@@ -15,21 +15,21 @@ fn main() -> Result<()> {
         Box::new(Q7 {}),
     ];
 
-    //let reply = rprompt::prompt_reply_stdout("Problem: ")?;
+    let reply = rprompt::prompt_reply_stdout("Problem: ")?;
 
-    //    if let Ok(index) = Ok(7) { //reply.parse::<usize>() {
-    let index = 6;
+    if let Ok(index) = reply.parse::<usize>() {
+        let index = index - 1;
 
-    if index < solutions.len() {
-        // read the input data
-        let path = format!("data/q{}.txt", index + 1);
+        if index < solutions.len() {
+            // read the input data
+            let path = format!("data/q{}.txt", index + 1);
 
-        let problem_input = ProblemInput::new(path)?;
+            let problem_input = ProblemInput::new(path)?;
 
-        println!("Part 1: {}", solutions[index].part1(&problem_input));
-        println!("Part 2: {}", solutions[index].part2(&problem_input));
+            println!("Part 1: {}", solutions[index].part1(&problem_input));
+            println!("Part 2: {}", solutions[index].part2(&problem_input));
+        }
     }
-    //    }
 
     Ok(())
 }
