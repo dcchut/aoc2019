@@ -89,7 +89,7 @@ impl Solution for Q7 {
 
                             loop {
                                 let state = orchestrators.run();
-                                if state.last_instruction == 99 {
+                                if state.opcode == 99 {
                                     last_value = orchestrators.interpreters[0].inputs.buffer[0];
                                     break;
                                 }

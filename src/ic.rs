@@ -1,7 +1,7 @@
 use crate::{Digits, Extract, FromDigits, ProblemInput};
 use anyhow::Result;
 use std::collections::{HashMap, VecDeque};
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 pub enum ICFinalization {
@@ -78,16 +78,16 @@ impl From<i64> for ICMode {
 }
 
 #[derive(Debug, Clone)]
-pub struct ICTerminalState {
-    state: ICState,
-    pub last_instruction: usize,
+pub struct ICTerminalState<'a> {
+    state: &'a ICState,
+    pub opcode: usize,
 }
 
-impl Deref for ICTerminalState {
+impl Deref for ICTerminalState<'_> {
     type Target = ICState;
 
     fn deref(&self) -> &Self::Target {
-        &self.state
+        self.state
     }
 }
 
@@ -96,8 +96,7 @@ pub struct ICInstruction {
     parameters: usize,
 
     /// A function for evaluating the given instruction
-    evaluate:
-        Box<dyn Fn(&mut ICState, &mut ICInput, &mut VecDeque<i64>, Vec<ICCode>) -> ICFinalization>,
+    evaluate: Box<dyn Fn(&mut ICState, &mut ICInput, &mut ICOutput, Vec<ICCode>) -> ICFinalization>,
 }
 
 pub struct ICPostProcess {
@@ -115,13 +114,16 @@ pub struct ICInterpreter {
     pub inputs: ICInput,
 
     /// The current outputs of our interpreter
-    pub outputs: VecDeque<i64>,
+    pub outputs: ICOutput,
 
     /// A map indicating which instruction corresponds to a given number
     instructions: HashMap<i64, ICInstruction>,
 
     /// A map indicating what post-processing should be done given a particular opcode
     processing: HashMap<i64, ICPostProcess>,
+
+    /// The last opcode ran
+    opcode: usize,
 }
 
 impl ICInterpreter {
@@ -139,14 +141,13 @@ impl ICInterpreter {
 
     pub fn register<F>(&mut self, key: i64, parameters: usize, f: F)
     where
-        F: 'static
-            + Fn(&mut ICState, &mut ICInput, &mut VecDeque<i64>, Vec<ICCode>) -> ICFinalization,
+        F: 'static + Fn(&mut ICState, &mut ICInput, &mut ICOutput, Vec<ICCode>) -> ICFinalization,
     {
         // Box our closure up, together with an assertion that it receives the correct number of arguments
         let evaluate = Box::new(
             move |state: &mut ICState,
                   inputs: &mut ICInput,
-                  outputs: &mut VecDeque<i64>,
+                  outputs: &mut ICOutput,
                   args: Vec<ICCode>| {
                 assert_eq!(args.len(), parameters);
 
@@ -166,9 +167,10 @@ impl ICInterpreter {
             initial_state: ICState::new(memory.clone()),
             state: ICState::new(memory),
             inputs: ICInput::new(),
-            outputs: VecDeque::new(),
+            outputs: ICOutput::new(),
             instructions: HashMap::new(),
             processing: HashMap::new(),
+            opcode: 0,
         };
 
         // Add instruction
@@ -264,7 +266,14 @@ impl ICInterpreter {
         self.outputs.clear();
     }
 
-    pub fn run(&mut self) -> ICTerminalState {
+    pub fn terminal_state(&self) -> ICTerminalState<'_> {
+        ICTerminalState {
+            state: &self.state,
+            opcode: self.opcode,
+        }
+    }
+
+    pub fn run(&mut self) {
         let mut opcode;
 
         loop {
@@ -286,6 +295,8 @@ impl ICInterpreter {
                 }
             }
             .from_digits();
+
+            self.opcode = opcode as usize;
 
             let inst = self.instructions.get(&opcode).unwrap();
 
@@ -339,16 +350,11 @@ impl ICInterpreter {
                 }
             }
         }
-
-        ICTerminalState {
-            state: self.state.clone(),
-            last_instruction: opcode as usize,
-        }
     }
 
-    pub fn run_with_inputs(&mut self, inputs: Vec<i64>) -> ICTerminalState {
+    pub fn run_with_inputs(&mut self, inputs: Vec<i64>) {
         self.inputs = ICInput::from(inputs);
-        self.run()
+        self.run();
     }
 }
 
@@ -413,6 +419,33 @@ impl From<Vec<i64>> for ICInput {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct ICOutput {
+    pub outputs: VecDeque<i64>,
+}
+
+impl ICOutput {
+    pub fn new() -> Self {
+        Self {
+            outputs: VecDeque::new(),
+        }
+    }
+}
+
+impl Deref for ICOutput {
+    type Target = VecDeque<i64>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.outputs
+    }
+}
+
+impl DerefMut for ICOutput {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.outputs
+    }
+}
+
 pub struct ICInterpreterOrchestrator {
     pub interpreters: Vec<ICInterpreter>,
     pub current_interpreter: usize,
@@ -439,19 +472,26 @@ impl ICInterpreterOrchestrator {
         }
     }
 
-    pub fn run(&mut self) -> ICTerminalState {
-        let current_interpreter = &mut self.interpreters[self.current_interpreter];
+    pub fn run(&mut self) -> ICTerminalState<'_> {
+        let current_index = self.current_interpreter;
+        let next_index = (self.current_interpreter + 1) % self.interpreters.len();
 
-        // run the current interpreter
-        let state = current_interpreter.run();
+        // Run the current interpreter, retrieving its first output
+        let output = {
+            let current_interpreter = &mut self.interpreters[current_index];
+            current_interpreter.run();
+            current_interpreter.outputs.pop_front()
+        };
 
-        if let Some(output) = current_interpreter.outputs.pop_front() {
-            // pipe this output to the next interpreter
-            let next_interpreter = (self.current_interpreter + 1) % self.interpreters.len();
-            self.interpreters[next_interpreter].inputs.add(output);
-            self.current_interpreter = next_interpreter;
+        // Add the received output to the input of the next interpreter
+        if let Some(input) = output {
+            self.interpreters[next_index].inputs.add(input);
         }
 
-        state
+        // Update the current interpreter pointer
+        self.current_interpreter = next_index;
+
+        // Return the terminal state object of the (now previous) interpreter
+        self.interpreters[current_index].terminal_state()
     }
 }

@@ -6,8 +6,9 @@ fn run_interpreter(interpreter: &mut ICInterpreter, noun: i64, verb: i64) -> i64
     interpreter.reset();
     interpreter.state.memory[1] = noun;
     interpreter.state.memory[2] = verb;
+    interpreter.run();
 
-    interpreter.run().get_state(0)
+    interpreter.terminal_state().get_state(0)
 }
 
 impl Solution for Q2 {
@@ -35,26 +36,24 @@ impl Solution for Q2 {
 #[test]
 fn test_interpreter() {
     let mut interpreter = ICInterpreter::new(vec![1, 0, 0, 0, 99]);
-    assert_eq!(
-        interpreter.run().memory,
-        vec![2, 0, 0, 0, 99]
-    );
+    interpreter.run();
+    assert_eq!(interpreter.terminal_state().memory, vec![2, 0, 0, 0, 99]);
 
     let mut interpreter = ICInterpreter::new(vec![2, 3, 0, 3, 99]);
-    assert_eq!(
-        interpreter.run().memory,
-        vec![2, 3, 0, 6, 99]
-    );
+    interpreter.run();
+    assert_eq!(interpreter.terminal_state().memory, vec![2, 3, 0, 6, 99]);
 
     let mut interpreter = ICInterpreter::new(vec![2, 4, 4, 5, 99, 0]);
+    interpreter.run();
     assert_eq!(
-        interpreter.run().memory,
+        interpreter.terminal_state().memory,
         vec![2, 4, 4, 5, 99, 9801]
     );
 
     let mut interpreter = ICInterpreter::new(vec![1, 1, 1, 4, 99, 5, 6, 0, 99]);
+    interpreter.run();
     assert_eq!(
-        interpreter.run().memory,
+        interpreter.terminal_state().memory,
         vec![30, 1, 1, 4, 2, 5, 6, 0, 99]
     );
 }
