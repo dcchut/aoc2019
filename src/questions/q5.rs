@@ -1,4 +1,5 @@
-use aoc2019::{Extract, ICInterpreter, ProblemInput, Solution};
+use aoc2019::ic::interpreter::ICInterpreter;
+use aoc2019::{Extract, ProblemInput, Solution};
 
 pub struct Q5;
 
@@ -6,7 +7,7 @@ impl Q5 {
     pub fn run(lines: &ProblemInput, input: i64) -> i64 {
         let mut interpreter: ICInterpreter = lines.extract().unwrap();
         interpreter.run_with_inputs(vec![input]);
-        interpreter.outputs.pop().unwrap()
+        interpreter.outputs.last().unwrap()
     }
 }
 

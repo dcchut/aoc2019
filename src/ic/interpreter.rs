@@ -1,121 +1,9 @@
+use crate::ic::io::{ICInput, ICOutput, Queue};
+use crate::ic::state::{ICState, ICTerminalState};
+use crate::ic::{ICCode, ICMode, ICPostAction};
 use crate::{Digits, Extract, FromDigits, ProblemInput};
 use anyhow::Result;
-use std::collections::{HashMap, VecDeque};
-use std::ops::Deref;
-
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
-pub enum ICPostAction {
-    Continue,
-    NoMove,
-    Terminate,
-}
-
-#[derive(Debug, Clone)]
-pub struct ICState {
-    /// The memory store of our IC interpreter
-    pub memory: Vec<i64>,
-
-    /// The current instruction pointer
-    pub ip: usize,
-}
-
-impl ICState {
-    pub fn new(memory: Vec<i64>) -> Self {
-        Self { memory, ip: 0 }
-    }
-
-    #[inline(always)]
-    pub fn get_state(&self, index: usize) -> i64 {
-        self.memory[index]
-    }
-
-    #[inline(always)]
-    pub fn get_current_state(&self) -> i64 {
-        self.get_state(self.ip)
-    }
-
-    #[inline(always)]
-    pub fn get_parameters(&self, parameters: usize) -> Vec<i64> {
-        (&self.memory[(self.ip + 1)..=(self.ip + parameters)]).to_vec()
-    }
-
-    #[inline(always)]
-    pub fn jump_by(&mut self, jump_by: usize) {
-        self.ip += jump_by;
-    }
-}
-
-#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
-pub enum ICMode {
-    Position,
-    Immediate,
-}
-
-#[derive(Debug, Copy, Clone, Hash)]
-pub struct ICCode {
-    pub value: i64,
-    mode: ICMode,
-}
-
-impl ICCode {
-    pub fn new(value: i64, mode: ICMode) -> Self {
-        Self {
-            value,
-            mode,
-        }
-    }
-
-    pub fn ev(&self, memory: &[i64]) -> i64 {
-        match self.mode {
-            ICMode::Position => memory[self.value as usize],
-            ICMode::Immediate => self.value
-        }
-    }
-
-    pub fn value(&self, state: &ICState) -> i64 {
-        // evaluate the current code at the given state
-        match self.mode {
-            ICMode::Position => state.get_state(self.value as usize),
-            ICMode::Immediate => self.value,
-        }
-    }
-}
-
-impl From<i64> for ICMode {
-    fn from(x: i64) -> Self {
-        if x == 1 {
-            ICMode::Immediate
-        } else {
-            ICMode::Position
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct ICTerminalState<'a> {
-    state: &'a ICState,
-    pub opcode: usize,
-}
-
-impl Deref for ICTerminalState<'_> {
-    type Target = ICState;
-
-    fn deref(&self) -> &Self::Target {
-        self.state
-    }
-}
-
-pub struct ICInstruction {
-    /// How many parameters this instruction accepts
-    parameters: usize,
-
-    /// A function for evaluating the given instruction
-    evaluate: Box<dyn Fn(&mut ICState, &mut ICInput, &mut ICOutput, Vec<ICCode>) -> ICPostAction>,
-}
-
-pub struct ICPostProcess {
-    evaluate: Box<dyn Fn(&mut ICState, &mut ICPostAction)>,
-}
+use std::collections::HashMap;
 
 pub struct ICInterpreter {
     /// The initial state of the interpreter
@@ -137,7 +25,7 @@ pub struct ICInterpreter {
     processing: HashMap<i64, ICPostProcess>,
 
     /// The last opcode ran
-    opcode: usize,
+    pub opcode: usize,
 }
 
 impl ICInterpreter {
@@ -189,19 +77,19 @@ impl ICInterpreter {
 
         // Add instruction
         interpreter.register(1, 3, |state, _, _, args| {
-            let s = args[0].value(state);
-            let t = args[1].value(state);
+            let s = args[0].value;
+            let t = args[1].value;
 
-            state.memory[args[2].value as usize] = s + t;
+            state.memory[args[2].immediate as usize] = s + t;
 
             ICPostAction::Continue
         });
 
         // Mul instruction
         interpreter.register(2, 3, |state, _, _, args| {
-            let s = args[0].value(state);
-            let t = args[1].value(state);
-            state.memory[args[2].value as usize] = s * t;
+            let s = args[0].value;
+            let t = args[1].value;
+            state.memory[args[2].immediate as usize] = s * t;
 
             ICPostAction::Continue
         });
@@ -211,22 +99,22 @@ impl ICInterpreter {
 
         // Input instruction
         interpreter.register(3, 1, |state, inputs, _, args| {
-            state.memory[args[0].value as usize] = inputs.pop();
+            state.memory[args[0].immediate as usize] = inputs.pop().unwrap();
 
             ICPostAction::Continue
         });
 
         // Output instruction
-        interpreter.register(4, 1, |state, _, outputs, args| {
-            outputs.add(args[0].value(state));
+        interpreter.register(4, 1, |_, _, outputs, args| {
+            outputs.add(args[0].value);
 
             ICPostAction::Continue
         });
 
         // jump-if-true instruction
         interpreter.register(5, 2, |state, _, _, args| {
-            let u = args[0].value(state);
-            let v = args[1].value(state);
+            let u = args[0].value;
+            let v = args[1].value;
 
             if u != 0 {
                 state.ip = v as usize;
@@ -239,8 +127,8 @@ impl ICInterpreter {
 
         // jump_if_false instruction
         interpreter.register(6, 2, |state, _, _, args| {
-            let u = args[0].value(state);
-            let v = args[1].value(state);
+            let u = args[0].value;
+            let v = args[1].value;
 
             if u == 0 {
                 state.ip = v as usize;
@@ -253,20 +141,20 @@ impl ICInterpreter {
 
         // lt instruction
         interpreter.register(7, 3, |state, _, _, args| {
-            let s = args[0].value(state);
-            let t = args[1].value(state);
+            let s = args[0].value;
+            let t = args[1].value;
 
-            state.memory[args[2].value as usize] = if s < t { 1 } else { 0 };
+            state.memory[args[2].immediate as usize] = if s < t { 1 } else { 0 };
 
             ICPostAction::Continue
         });
 
         // eq instruction
         interpreter.register(8, 3, |state, _, _, args| {
-            let s = args[0].value(state);
-            let t = args[1].value(state);
+            let s = args[0].value;
+            let t = args[1].value;
 
-            state.memory[args[2].value as usize] = if s == t { 1 } else { 0 };
+            state.memory[args[2].immediate as usize] = if s == t { 1 } else { 0 };
 
             ICPostAction::Continue
         });
@@ -281,10 +169,7 @@ impl ICInterpreter {
     }
 
     pub fn terminal_state(&self) -> ICTerminalState<'_> {
-        ICTerminalState {
-            state: &self.state,
-            opcode: self.opcode,
-        }
+        ICTerminalState::new(self)
     }
 
     pub fn run(&mut self) {
@@ -331,10 +216,7 @@ impl ICInterpreter {
                 };
 
                 // Add the argument
-                ic_args.push(ICCode {
-                    value: arg,
-                    mode: ICMode::from(parameter_mode),
-                });
+                ic_args.push(ICCode::new(&self.state, arg, ICMode::from(parameter_mode)));
             }
 
             let inst = self.instructions.get_mut(&opcode).unwrap();
@@ -387,123 +269,14 @@ impl Extract<ICInterpreter> for ProblemInput {
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct ICInput {
-    pub buffer: VecDeque<i64>,
+pub struct ICInstruction {
+    /// How many parameters this instruction accepts
+    parameters: usize,
+
+    /// A function for evaluating the given instruction
+    evaluate: Box<dyn Fn(&mut ICState, &mut ICInput, &mut ICOutput, Vec<ICCode>) -> ICPostAction>,
 }
 
-impl ICInput {
-    pub fn single(single: i64) -> Self {
-        let mut buffer = VecDeque::new();
-        buffer.push_front(single);
-
-        Self { buffer }
-    }
-
-    pub fn new() -> Self {
-        Self {
-            buffer: VecDeque::new(),
-        }
-    }
-
-    pub fn add(&mut self, input: i64) {
-        self.buffer.push_back(input);
-    }
-
-    pub fn pop(&mut self) -> i64 {
-        self.buffer.pop_front().unwrap()
-    }
-
-    pub fn reset(&mut self) {
-        self.buffer.clear();
-    }
-}
-
-impl Default for ICInput {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl From<Vec<i64>> for ICInput {
-    fn from(buffer: Vec<i64>) -> Self {
-        Self {
-            buffer: buffer.into_iter().collect(),
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct ICOutput {
-    pub outputs: VecDeque<i64>,
-}
-
-impl ICOutput {
-    pub fn new() -> Self {
-        Self {
-            outputs: VecDeque::new(),
-        }
-    }
-
-    pub fn add(&mut self, v : i64) {
-        self.outputs.push_back(v);
-    }
-
-    pub fn pop(&mut self) -> Option<i64> {
-        self.outputs.pop_front()
-    }
-
-    pub fn reset(&mut self) {
-        self.outputs.clear();
-    }
-}
-
-pub struct ICInterpreterOrchestrator {
-    pub interpreters: Vec<ICInterpreter>,
-    pub current_interpreter: usize,
-}
-
-impl ICInterpreterOrchestrator {
-    pub fn new(interpreters: Vec<ICInterpreter>) -> Self {
-        Self {
-            interpreters,
-            current_interpreter: 0,
-        }
-    }
-
-    pub fn reset(&mut self) {
-        self.interpreters
-            .iter_mut()
-            .for_each(|interpreter| interpreter.reset());
-        self.current_interpreter = 0;
-    }
-
-    pub fn prime(&mut self, inputs: Vec<ICInput>) {
-        for (index, input) in inputs.into_iter().enumerate() {
-            self.interpreters[index].inputs = input;
-        }
-    }
-
-    pub fn run(&mut self) -> ICTerminalState<'_> {
-        let current_index = self.current_interpreter;
-        let next_index = (self.current_interpreter + 1) % self.interpreters.len();
-
-        // Run the current interpreter, retrieving its first output
-        let output = {
-            let current_interpreter = &mut self.interpreters[current_index];
-            current_interpreter.run();
-            current_interpreter.outputs.pop()
-        };
-
-        // Add the received output to the input of the next interpreter
-        if let Some(input) = output {
-            self.interpreters[next_index].inputs.add(input);
-        }
-
-        // Update the current interpreter pointer
-        self.current_interpreter = next_index;
-
-        // Return the terminal state object of the (now previous) interpreter
-        self.interpreters[current_index].terminal_state()
-    }
+pub struct ICPostProcess {
+    evaluate: Box<dyn Fn(&mut ICState, &mut ICPostAction)>,
 }

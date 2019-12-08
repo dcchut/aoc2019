@@ -1,5 +1,8 @@
-use aoc2019::ic::{ICInput, ICInterpreterOrchestrator, ICPostAction};
-use aoc2019::{Extract, ICInterpreter, ProblemInput, Solution};
+use aoc2019::ic::interpreter::ICInterpreter;
+use aoc2019::ic::io::{ICInput, Queue};
+use aoc2019::ic::orchestrator::ICInterpreterOrchestrator;
+use aoc2019::ic::ICPostAction;
+use aoc2019::{Extract, ProblemInput, Solution};
 use std::cmp::max;
 use std::collections::HashSet;
 
@@ -55,11 +58,8 @@ impl Solution for Q7 {
         for index in 0..5 {
             orchestrators.interpreters[index].postprocess(4, |_, fz: &mut ICPostAction| {
                 // convert output finalization continue states to terminate
-                match fz {
-                    ICPostAction::Continue => {
-                        *fz = ICPostAction::Terminate;
-                    }
-                    _ => {}
+                if let ICPostAction::Continue = fz {
+                    *fz = ICPostAction::Terminate;
                 };
             });
         }

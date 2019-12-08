@@ -1,4 +1,5 @@
-use aoc2019::{Extract, ICInterpreter, ProblemInput, Solution};
+use aoc2019::ic::interpreter::ICInterpreter;
+use aoc2019::{Extract, ProblemInput, Solution};
 
 pub struct Q2;
 

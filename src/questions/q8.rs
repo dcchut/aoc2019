@@ -1,18 +1,18 @@
 #[allow(unused_imports)]
-use aoc2019::{ProblemInput, Solution, Extract, Digits, FromDigits};
+use aoc2019::{Digits, Extract, FromDigits, ProblemInput, Solution};
 
 pub struct Q8;
 
 impl Solution for Q8 {
-    fn part1(&self, _lines: &ProblemInput) -> i64 {
-        let digits : Vec<_> = _lines.lines[0].chars().map(|v| v.to_digit(10).unwrap()).collect();
+    fn part1(&self, lines: &ProblemInput) -> i64 {
+        let digits = lines.digits();
 
         let width = 25;
         let height = 6;
 
         let mut layer = Vec::new();
         let mut zeros = 0;
-        let mut best_zeros = 99999999;  // Some large number
+        let mut best_zeros = 999_999_999;
         let mut best_layer = vec![];
 
         for digit in digits {
@@ -45,8 +45,8 @@ impl Solution for Q8 {
         ones * twos
     }
 
-    fn part2(&self, _lines: &ProblemInput) -> i64 {
-        let digits : Vec<_> = _lines.lines[0].chars().map(|v| v.to_digit(10).unwrap()).collect();
+    fn part2(&self, lines: &ProblemInput) -> i64 {
+        let digits = lines.digits();
 
         let width = 25;
         let height = 6;
@@ -76,7 +76,7 @@ impl Solution for Q8 {
                     print!(" ");
                 }
             }
-            print!("\n");
+            println!();
         }
 
         0

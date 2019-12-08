@@ -1,8 +1,6 @@
 use anyhow::{Context, Result};
 use std::path::Path;
 
-pub use crate::ic::ICInterpreter;
-
 pub mod grid;
 pub mod ic;
 
@@ -72,6 +70,18 @@ impl ProblemInput {
         self.lines
             .iter()
             .map(|line| line.split(',').map(String::from).collect::<Vec<_>>())
+            .flatten()
+            .collect()
+    }
+
+    pub fn digits(&self) -> Vec<u32> {
+        self.lines
+            .iter()
+            .map(|line| {
+                line.chars()
+                    .map(|c| c.to_digit(10).unwrap())
+                    .collect::<Vec<_>>()
+            })
             .flatten()
             .collect()
     }
