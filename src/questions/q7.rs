@@ -53,11 +53,11 @@ impl Solution for Q7 {
 
         // register this postprocess with each interpreter
         for index in 0..5 {
-            orchestrators.interpreters[index].postprocess(4, |_, fz: &mut ICFinalization| {
+            orchestrators.interpreters[index].postprocess(4, |_, fz: &mut InstructionAction| {
                 // convert output finalization continue states to terminate
                 match fz {
-                    ICFinalization::Continue => {
-                        *fz = ICFinalization::Terminate;
+                    InstructionAction::Continue => {
+                        *fz = InstructionAction::Terminate;
                     }
                     _ => {}
                 };

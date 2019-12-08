@@ -13,6 +13,7 @@ fn main() -> Result<()> {
         Box::new(Q5 {}),
         Box::new(Q6 {}),
         Box::new(Q7 {}),
+        Box::new(Q8 {}),
     ];
 
     let reply = rprompt::prompt_reply_stdout("Problem: ")?;

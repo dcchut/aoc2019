@@ -4,7 +4,7 @@ use std::collections::{HashMap, VecDeque};
 use std::ops::Deref;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
-pub enum ICFinalization {
+pub enum InstructionAction {
     Continue,
     NoMove,
     Terminate,
@@ -53,11 +53,25 @@ pub enum ICMode {
 
 #[derive(Debug, Copy, Clone, Hash)]
 pub struct ICCode {
-    value: i64,
+    pub value: i64,
     mode: ICMode,
 }
 
 impl ICCode {
+    pub fn new(value: i64, mode: ICMode) -> Self {
+        Self {
+            value,
+            mode,
+        }
+    }
+
+    pub fn ev(&self, memory: &[i64]) -> i64 {
+        match self.mode {
+            ICMode::Position => memory[self.value as usize],
+            ICMode::Immediate => self.value
+        }
+    }
+
     pub fn value(&self, state: &ICState) -> i64 {
         // evaluate the current code at the given state
         match self.mode {
@@ -96,11 +110,11 @@ pub struct ICInstruction {
     parameters: usize,
 
     /// A function for evaluating the given instruction
-    evaluate: Box<dyn Fn(&mut ICState, &mut ICInput, &mut ICOutput, Vec<ICCode>) -> ICFinalization>,
+    evaluate: Box<dyn Fn(&mut ICState, &mut ICInput, &mut ICOutput, Vec<ICCode>) -> InstructionAction>,
 }
 
 pub struct ICPostProcess {
-    evaluate: Box<dyn Fn(&mut ICState, &mut ICFinalization)>,
+    evaluate: Box<dyn Fn(&mut ICState, &mut InstructionAction)>,
 }
 
 pub struct ICInterpreter {
@@ -129,7 +143,7 @@ pub struct ICInterpreter {
 impl ICInterpreter {
     pub fn postprocess<F>(&mut self, key: i64, f: F)
     where
-        F: 'static + Fn(&mut ICState, &mut ICFinalization),
+        F: 'static + Fn(&mut ICState, &mut InstructionAction),
     {
         self.processing.insert(
             key,
@@ -141,7 +155,7 @@ impl ICInterpreter {
 
     pub fn register<F>(&mut self, key: i64, parameters: usize, f: F)
     where
-        F: 'static + Fn(&mut ICState, &mut ICInput, &mut ICOutput, Vec<ICCode>) -> ICFinalization,
+        F: 'static + Fn(&mut ICState, &mut ICInput, &mut ICOutput, Vec<ICCode>) -> InstructionAction,
     {
         // Box our closure up, together with an assertion that it receives the correct number of arguments
         let evaluate = Box::new(
@@ -180,7 +194,7 @@ impl ICInterpreter {
 
             state.memory[args[2].value as usize] = s + t;
 
-            ICFinalization::Continue
+            InstructionAction::Continue
         });
 
         // Mul instruction
@@ -189,24 +203,24 @@ impl ICInterpreter {
             let t = args[1].value(state);
             state.memory[args[2].value as usize] = s * t;
 
-            ICFinalization::Continue
+            InstructionAction::Continue
         });
 
         // Terminate instruction
-        interpreter.register(99, 0, |_, _, _, _| ICFinalization::Terminate);
+        interpreter.register(99, 0, |_, _, _, _| InstructionAction::Terminate);
 
         // Input instruction
         interpreter.register(3, 1, |state, inputs, _, args| {
             state.memory[args[0].value as usize] = inputs.pop();
 
-            ICFinalization::Continue
+            InstructionAction::Continue
         });
 
         // Output instruction
         interpreter.register(4, 1, |state, _, outputs, args| {
             outputs.add(args[0].value(state));
 
-            ICFinalization::Continue
+            InstructionAction::Continue
         });
 
         // jump-if-true instruction
@@ -217,9 +231,9 @@ impl ICInterpreter {
             if u != 0 {
                 state.ip = v as usize;
 
-                ICFinalization::NoMove
+                InstructionAction::NoMove
             } else {
-                ICFinalization::Continue
+                InstructionAction::Continue
             }
         });
 
@@ -231,9 +245,9 @@ impl ICInterpreter {
             if u == 0 {
                 state.ip = v as usize;
 
-                ICFinalization::NoMove
+                InstructionAction::NoMove
             } else {
-                ICFinalization::Continue
+                InstructionAction::Continue
             }
         });
 
@@ -244,7 +258,7 @@ impl ICInterpreter {
 
             state.memory[args[2].value as usize] = if s < t { 1 } else { 0 };
 
-            ICFinalization::Continue
+            InstructionAction::Continue
         });
 
         // eq instruction
@@ -254,7 +268,7 @@ impl ICInterpreter {
 
             state.memory[args[2].value as usize] = if s == t { 1 } else { 0 };
 
-            ICFinalization::Continue
+            InstructionAction::Continue
         });
 
         interpreter
@@ -340,11 +354,11 @@ impl ICInterpreter {
 
             // Update the instruction pointer
             match result {
-                ICFinalization::Continue => {
+                InstructionAction::Continue => {
                     self.state.jump_by(inst.parameters + 1);
                 }
-                ICFinalization::NoMove => {}
-                ICFinalization::Terminate => {
+                InstructionAction::NoMove => {}
+                InstructionAction::Terminate => {
                     self.state.jump_by(inst.parameters + 1);
                     break;
                 }

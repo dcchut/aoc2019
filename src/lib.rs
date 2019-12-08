@@ -67,6 +67,14 @@ impl ProblemInput {
     pub fn as_deep_vec(&self) -> Vec<Vec<i64>> {
         self.extract().unwrap()
     }
+
+    pub fn as_csv(&self) -> Vec<String> {
+        self.lines
+            .iter()
+            .map(|line| line.split(',').map(String::from).collect::<Vec<_>>())
+            .flatten()
+            .collect()
+    }
 }
 
 impl Extract<Vec<Vec<i64>>> for ProblemInput {
