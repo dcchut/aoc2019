@@ -1,7 +1,7 @@
 use crate::{Digits, Extract, FromDigits, ProblemInput};
 use anyhow::Result;
 use std::collections::{HashMap, VecDeque};
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 pub enum ICFinalization {
@@ -204,7 +204,7 @@ impl ICInterpreter {
 
         // Output instruction
         interpreter.register(4, 1, |state, _, outputs, args| {
-            outputs.push_back(args[0].value(state));
+            outputs.add(args[0].value(state));
 
             ICFinalization::Continue
         });
@@ -263,7 +263,7 @@ impl ICInterpreter {
     pub fn reset(&mut self) {
         self.state = self.initial_state.clone();
         self.inputs.reset();
-        self.outputs.clear();
+        self.outputs.reset();
     }
 
     pub fn terminal_state(&self) -> ICTerminalState<'_> {
@@ -430,19 +430,17 @@ impl ICOutput {
             outputs: VecDeque::new(),
         }
     }
-}
 
-impl Deref for ICOutput {
-    type Target = VecDeque<i64>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.outputs
+    pub fn add(&mut self, v : i64) {
+        self.outputs.push_back(v);
     }
-}
 
-impl DerefMut for ICOutput {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.outputs
+    pub fn pop(&mut self) -> Option<i64> {
+        self.outputs.pop_front()
+    }
+
+    pub fn reset(&mut self) {
+        self.outputs.clear();
     }
 }
 
@@ -480,7 +478,7 @@ impl ICInterpreterOrchestrator {
         let output = {
             let current_interpreter = &mut self.interpreters[current_index];
             current_interpreter.run();
-            current_interpreter.outputs.pop_front()
+            current_interpreter.outputs.pop()
         };
 
         // Add the received output to the input of the next interpreter

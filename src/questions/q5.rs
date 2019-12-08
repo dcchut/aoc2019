@@ -6,7 +6,7 @@ impl Q5 {
     pub fn run(lines: &ProblemInput, input: i64) -> i64 {
         let mut interpreter: ICInterpreter = lines.extract().unwrap();
         interpreter.run_with_inputs(vec![input]);
-        interpreter.outputs.pop_back().unwrap()
+        interpreter.outputs.pop().unwrap()
     }
 }
 
@@ -27,11 +27,11 @@ fn test_funky_interpreter() {
     let mut interpreter: ICInterpreter = input.extract().unwrap();
     interpreter.run_with_inputs(vec![7]);
 
-    assert_eq!(interpreter.outputs.pop_front(), Some(7));
+    assert_eq!(interpreter.outputs.pop(), Some(7));
     interpreter.reset();
 
     interpreter.run_with_inputs(vec![9]);
-    assert_eq!(interpreter.outputs.pop_front(), Some(9));
+    assert_eq!(interpreter.outputs.pop(), Some(9));
 
     // Test immediate vs. position mode
     let input = ProblemInput::from(vec!["1002,4,3,4,33"]);
@@ -45,13 +45,13 @@ fn test_funky_interpreter() {
     let mut interpreter: ICInterpreter = input.extract().unwrap();
     interpreter.run_with_inputs(vec![7]);
 
-    assert_eq!(interpreter.outputs.pop_front(), Some(999));
+    assert_eq!(interpreter.outputs.pop(), Some(999));
     interpreter.reset();
 
     interpreter.run_with_inputs(vec![8]);
-    assert_eq!(interpreter.outputs.pop_front(), Some(1000));
+    assert_eq!(interpreter.outputs.pop(), Some(1000));
     interpreter.reset();
 
     interpreter.run_with_inputs(vec![9]);
-    assert_eq!(interpreter.outputs.pop_front(), Some(1001));
+    assert_eq!(interpreter.outputs.pop(), Some(1001));
 }

@@ -23,19 +23,19 @@ impl Solution for Q7 {
                             // Run the interpreter
                             interpreter.reset();
                             interpreter.run_with_inputs(vec![i, 0]);
-                            let last = interpreter.outputs.pop_front().unwrap();
+                            let last = interpreter.outputs.pop().unwrap();
                             interpreter.reset();
                             interpreter.run_with_inputs(vec![j, last]);
-                            let last = interpreter.outputs.pop_front().unwrap();
+                            let last = interpreter.outputs.pop().unwrap();
                             interpreter.reset();
                             interpreter.run_with_inputs(vec![k, last]);
-                            let last = interpreter.outputs.pop_front().unwrap();
+                            let last = interpreter.outputs.pop().unwrap();
                             interpreter.reset();
                             interpreter.run_with_inputs(vec![l, last]);
-                            let last = interpreter.outputs.pop_front().unwrap();
+                            let last = interpreter.outputs.pop().unwrap();
                             interpreter.reset();
                             interpreter.run_with_inputs(vec![m, last]);
-                            let last = interpreter.outputs.pop_front().unwrap();
+                            let last = interpreter.outputs.pop().unwrap();
 
                             best_output = max(best_output, last);
                         }
