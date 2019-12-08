@@ -4,7 +4,7 @@ use std::collections::{HashMap, VecDeque};
 use std::ops::Deref;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
-pub enum InstructionAction {
+pub enum ICPostAction {
     Continue,
     NoMove,
     Terminate,
@@ -110,11 +110,11 @@ pub struct ICInstruction {
     parameters: usize,
 
     /// A function for evaluating the given instruction
-    evaluate: Box<dyn Fn(&mut ICState, &mut ICInput, &mut ICOutput, Vec<ICCode>) -> InstructionAction>,
+    evaluate: Box<dyn Fn(&mut ICState, &mut ICInput, &mut ICOutput, Vec<ICCode>) -> ICPostAction>,
 }
 
 pub struct ICPostProcess {
-    evaluate: Box<dyn Fn(&mut ICState, &mut InstructionAction)>,
+    evaluate: Box<dyn Fn(&mut ICState, &mut ICPostAction)>,
 }
 
 pub struct ICInterpreter {
@@ -143,7 +143,7 @@ pub struct ICInterpreter {
 impl ICInterpreter {
     pub fn postprocess<F>(&mut self, key: i64, f: F)
     where
-        F: 'static + Fn(&mut ICState, &mut InstructionAction),
+        F: 'static + Fn(&mut ICState, &mut ICPostAction),
     {
         self.processing.insert(
             key,
@@ -155,7 +155,7 @@ impl ICInterpreter {
 
     pub fn register<F>(&mut self, key: i64, parameters: usize, f: F)
     where
-        F: 'static + Fn(&mut ICState, &mut ICInput, &mut ICOutput, Vec<ICCode>) -> InstructionAction,
+        F: 'static + Fn(&mut ICState, &mut ICInput, &mut ICOutput, Vec<ICCode>) -> ICPostAction,
     {
         // Box our closure up, together with an assertion that it receives the correct number of arguments
         let evaluate = Box::new(
@@ -194,7 +194,7 @@ impl ICInterpreter {
 
             state.memory[args[2].value as usize] = s + t;
 
-            InstructionAction::Continue
+            ICPostAction::Continue
         });
 
         // Mul instruction
@@ -203,24 +203,24 @@ impl ICInterpreter {
             let t = args[1].value(state);
             state.memory[args[2].value as usize] = s * t;
 
-            InstructionAction::Continue
+            ICPostAction::Continue
         });
 
         // Terminate instruction
-        interpreter.register(99, 0, |_, _, _, _| InstructionAction::Terminate);
+        interpreter.register(99, 0, |_, _, _, _| ICPostAction::Terminate);
 
         // Input instruction
         interpreter.register(3, 1, |state, inputs, _, args| {
             state.memory[args[0].value as usize] = inputs.pop();
 
-            InstructionAction::Continue
+            ICPostAction::Continue
         });
 
         // Output instruction
         interpreter.register(4, 1, |state, _, outputs, args| {
             outputs.add(args[0].value(state));
 
-            InstructionAction::Continue
+            ICPostAction::Continue
         });
 
         // jump-if-true instruction
@@ -231,9 +231,9 @@ impl ICInterpreter {
             if u != 0 {
                 state.ip = v as usize;
 
-                InstructionAction::NoMove
+                ICPostAction::NoMove
             } else {
-                InstructionAction::Continue
+                ICPostAction::Continue
             }
         });
 
@@ -245,9 +245,9 @@ impl ICInterpreter {
             if u == 0 {
                 state.ip = v as usize;
 
-                InstructionAction::NoMove
+                ICPostAction::NoMove
             } else {
-                InstructionAction::Continue
+                ICPostAction::Continue
             }
         });
 
@@ -258,7 +258,7 @@ impl ICInterpreter {
 
             state.memory[args[2].value as usize] = if s < t { 1 } else { 0 };
 
-            InstructionAction::Continue
+            ICPostAction::Continue
         });
 
         // eq instruction
@@ -268,7 +268,7 @@ impl ICInterpreter {
 
             state.memory[args[2].value as usize] = if s == t { 1 } else { 0 };
 
-            InstructionAction::Continue
+            ICPostAction::Continue
         });
 
         interpreter
@@ -354,11 +354,11 @@ impl ICInterpreter {
 
             // Update the instruction pointer
             match result {
-                InstructionAction::Continue => {
+                ICPostAction::Continue => {
                     self.state.jump_by(inst.parameters + 1);
                 }
-                InstructionAction::NoMove => {}
-                InstructionAction::Terminate => {
+                ICPostAction::NoMove => {}
+                ICPostAction::Terminate => {
                     self.state.jump_by(inst.parameters + 1);
                     break;
                 }
