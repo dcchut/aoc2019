@@ -80,7 +80,7 @@ impl ICInterpreter {
             let s = args[0].value;
             let t = args[1].value;
 
-            state.memory[args[2].immediate as usize] = s + t;
+            state.write(args[2].index, s + t);
 
             ICPostAction::Continue
         });
@@ -89,7 +89,8 @@ impl ICInterpreter {
         interpreter.register(2, 3, |state, _, _, args| {
             let s = args[0].value;
             let t = args[1].value;
-            state.memory[args[2].immediate as usize] = s * t;
+
+            state.write(args[2].index, s * t);
 
             ICPostAction::Continue
         });
@@ -99,7 +100,7 @@ impl ICInterpreter {
 
         // Input instruction
         interpreter.register(3, 1, |state, inputs, _, args| {
-            state.memory[args[0].immediate as usize] = inputs.pop().unwrap();
+            state.write(args[0].index, inputs.pop().unwrap());
 
             ICPostAction::Continue
         });
@@ -143,8 +144,7 @@ impl ICInterpreter {
         interpreter.register(7, 3, |state, _, _, args| {
             let s = args[0].value;
             let t = args[1].value;
-
-            state.memory[args[2].immediate as usize] = if s < t { 1 } else { 0 };
+            state.write(args[2].index, if s < t { 1 } else { 0 });
 
             ICPostAction::Continue
         });
@@ -153,8 +153,16 @@ impl ICInterpreter {
         interpreter.register(8, 3, |state, _, _, args| {
             let s = args[0].value;
             let t = args[1].value;
+            state.write(args[2].index, if s == t { 1 } else { 0 });
 
-            state.memory[args[2].immediate as usize] = if s == t { 1 } else { 0 };
+            ICPostAction::Continue
+        });
+
+        // relative base offset
+        interpreter.register(9, 1, |state, _, _, args| {
+            let s = args[0].value;
+
+            state.relative_base += s;
 
             ICPostAction::Continue
         });

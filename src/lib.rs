@@ -138,7 +138,7 @@ impl From<Vec<&str>> for ProblemInput {
 /// A trait representing a generic solution to an AoC problem.
 // TODO: might want to be generic over return type
 // or perhaps Box<dyn ToString> or something like that.
-pub trait Solution {
+pub trait Solution : Send + Sync {
     fn part1(&self, lines: &ProblemInput) -> i64;
     fn part2(&self, lines: &ProblemInput) -> i64;
 }

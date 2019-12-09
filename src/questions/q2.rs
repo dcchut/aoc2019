@@ -9,7 +9,7 @@ fn run_interpreter(interpreter: &mut ICInterpreter, noun: i64, verb: i64) -> i64
     interpreter.state.memory[2] = verb;
     interpreter.run();
 
-    interpreter.terminal_state().get_state(0)
+    interpreter.terminal_state().read(0)
 }
 
 impl Solution for Q2 {

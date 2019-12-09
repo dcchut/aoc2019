@@ -8,21 +8,23 @@ pub struct ICState {
 
     /// The current instruction pointer
     pub ip: usize,
+
+    /// The current relative base
+    pub relative_base: i64,
 }
 
 impl ICState {
     pub fn new(memory: Vec<i64>) -> Self {
-        Self { memory, ip: 0 }
-    }
-
-    #[inline(always)]
-    pub fn get_state(&self, index: usize) -> i64 {
-        self.memory[index]
+        Self {
+            memory,
+            ip: 0,
+            relative_base: 0,
+        }
     }
 
     #[inline(always)]
     pub fn get_current_state(&self) -> i64 {
-        self.get_state(self.ip)
+        self.read(self.ip)
     }
 
     #[inline(always)]
@@ -33,6 +35,23 @@ impl ICState {
     #[inline(always)]
     pub fn jump_by(&mut self, jump_by: usize) {
         self.ip += jump_by;
+    }
+
+    #[inline(always)]
+    pub fn read(&self, index: usize) -> i64 {
+        if index >= self.memory.len() {
+            0
+        } else {
+            self.memory[index]
+        }
+    }
+
+    #[inline(always)]
+    pub fn write(&mut self, index: usize, value: i64) {
+        if index >= self.memory.len() {
+            self.memory.resize(index + 1, 0);
+        }
+        self.memory[index] = value;
     }
 }
 
