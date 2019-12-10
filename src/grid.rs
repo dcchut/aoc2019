@@ -1,6 +1,7 @@
 use crate::{Extract, ProblemInput};
 use anyhow::{anyhow, Context, Result};
 use std::collections::{HashMap, HashSet};
+use std::ops::{Add, Sub};
 use std::str::FromStr;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -90,6 +91,22 @@ impl Position {
         }
 
         abs(self.x) + abs(self.y)
+    }
+}
+
+impl Sub for Position {
+    type Output = Position;
+
+    fn sub(self, other: Position) -> Position {
+        Position::new(self.x - other.x, self.y - other.y)
+    }
+}
+
+impl Add for Position {
+    type Output = Position;
+
+    fn add(self, other: Position) -> Position {
+        Position::new(self.x + other.x, self.y + other.y)
     }
 }
 
