@@ -12,6 +12,24 @@ pub enum Direction {
     Down,
 }
 
+impl Direction {
+    #[inline(always)]
+    pub fn left(self) -> Self {
+        match self {
+            Direction::Left => Direction::Down,
+            Direction::Down => Direction::Right,
+            Direction::Right => Direction::Up,
+            Direction::Up => Direction::Left,
+        }
+    }
+
+    #[inline(always)]
+    pub fn right(self) -> Self {
+        // the compiler will take care of it
+        self.left().left().left()
+    }
+}
+
 impl FromStr for Direction {
     type Err = anyhow::Error;
 
