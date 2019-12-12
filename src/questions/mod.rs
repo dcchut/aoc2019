@@ -1,6 +1,7 @@
 pub use q1::Q1;
 pub use q10::Q10;
 pub use q11::Q11;
+pub use q12::Q12;
 pub use q2::Q2;
 pub use q3::Q3;
 pub use q4::Q4;
@@ -13,6 +14,7 @@ pub use q9::Q9;
 pub mod q1;
 pub mod q10;
 pub mod q11;
+pub mod q12;
 pub mod q2;
 pub mod q3;
 pub mod q4;

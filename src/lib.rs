@@ -142,3 +142,39 @@ pub trait Solution: Send + Sync {
     fn part1(&self, lines: &ProblemInput) -> i64;
     fn part2(&self, lines: &ProblemInput) -> i64;
 }
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct Point {
+    pub x: i64,
+    pub y: i64,
+    pub z: i64,
+}
+
+impl Point {
+    pub fn new(x: i64, y: i64, z: i64) -> Self {
+        Self { x, y, z }
+    }
+}
+
+impl Extract<Vec<Point>> for ProblemInput {
+    fn extract(&self) -> Result<Vec<Point>> {
+        let mut points = Vec::with_capacity(self.lines.len());
+
+        for line in self.lines.iter() {
+            let mut split = line.split(", ");
+
+            let part1 = &(split.next().unwrap())[3..];
+            let part2 = &(split.next().unwrap())[2..];
+            let part3 = split.next().unwrap();
+            let part3 = &(part3)[2..(part3.len() - 1)];
+
+            points.push(Point::new(
+                part1.parse().unwrap(),
+                part2.parse().unwrap(),
+                part3.parse().unwrap(),
+            ));
+        }
+
+        Ok(points)
+    }
+}
