@@ -1,5 +1,5 @@
-use aoc2019::Point;
-use aoc2019::{Extract, ProblemInput, Solution};
+use crate::Point;
+use crate::{Extract, ProblemInput, Solution};
 use num::Integer;
 use std::collections::HashSet;
 
@@ -113,5 +113,23 @@ impl Solution for Q12 {
         let f3 = equalize(points.iter().map(|p| p.z).collect());
 
         f1.lcm(&f2).lcm(&f3)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::load_problem_input;
+
+    #[test]
+    fn test_part1_solution() {
+        let q12 = Q12;
+        assert_eq!(q12.part1(&load_problem_input(12)), 5_517);
+    }
+
+    #[test]
+    fn test_part2_solution() {
+        let q12 = Q12;
+        assert_eq!(q12.part2(&load_problem_input(12)), 303_070_460_651_184);
     }
 }

@@ -1,6 +1,6 @@
+use crate::grid::Position;
+use crate::{Extract, ProblemInput, Solution};
 use anyhow::{Context, Result};
-use aoc2019::grid::Position;
-use aoc2019::{Extract, ProblemInput, Solution};
 use num::Integer;
 use ordered_float::OrderedFloat;
 use std::collections::{HashMap, HashSet};
@@ -184,5 +184,23 @@ impl Solution for Q10 {
             }
         }
         0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::load_problem_input;
+
+    #[test]
+    fn test_part1_solution() {
+        let q10 = Q10;
+        assert_eq!(q10.part1(&load_problem_input(10)), 221);
+    }
+
+    #[test]
+    fn test_part2_solution() {
+        let q10 = Q10;
+        assert_eq!(q10.part2(&load_problem_input(10)), 806);
     }
 }

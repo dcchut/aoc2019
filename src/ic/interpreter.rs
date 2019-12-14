@@ -3,7 +3,13 @@ use crate::ic::state::{ICState, ICTerminalState};
 use crate::ic::{ICCode, ICMode, ICPostAction};
 use crate::{Digits, Extract, FromDigits, ProblemInput};
 use anyhow::Result;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+enum ICYieldState {
+    Yielded,
+    Unyielded,
+}
 
 pub struct ICInterpreter {
     /// The initial state of the interpreter
@@ -26,6 +32,11 @@ pub struct ICInterpreter {
 
     /// The last opcode ran
     pub opcode: usize,
+
+    /// A vec containing opcodes at which point the interpreter should yield control back to the caller
+    pub yields: HashSet<i64>,
+
+    yield_state: ICYieldState,
 }
 
 impl ICInterpreter {
@@ -73,6 +84,8 @@ impl ICInterpreter {
             instructions: HashMap::new(),
             processing: HashMap::new(),
             opcode: 0,
+            yields: HashSet::new(),
+            yield_state: ICYieldState::Unyielded,
         };
 
         // Add instruction
@@ -202,6 +215,14 @@ impl ICInterpreter {
                 }
             }
             .from_digits();
+
+            // Check for yields
+            if self.yield_state == ICYieldState::Unyielded && self.yields.contains(&opcode) {
+                // yield control back to the caller
+                self.yield_state = ICYieldState::Yielded;
+                return;
+            }
+            self.yield_state = ICYieldState::Unyielded;
 
             self.opcode = opcode as usize;
 

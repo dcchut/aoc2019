@@ -1,5 +1,5 @@
-use aoc2019::ic::interpreter::ICInterpreter;
-use aoc2019::{Extract, ProblemInput, Solution};
+use crate::ic::interpreter::ICInterpreter;
+use crate::{Extract, ProblemInput, Solution};
 
 pub struct Q2;
 
@@ -34,27 +34,45 @@ impl Solution for Q2 {
     }
 }
 
-#[test]
-fn test_interpreter() {
-    let mut interpreter = ICInterpreter::new(vec![1, 0, 0, 0, 99]);
-    interpreter.run();
-    assert_eq!(interpreter.terminal_state().memory, vec![2, 0, 0, 0, 99]);
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::load_problem_input;
 
-    let mut interpreter = ICInterpreter::new(vec![2, 3, 0, 3, 99]);
-    interpreter.run();
-    assert_eq!(interpreter.terminal_state().memory, vec![2, 3, 0, 6, 99]);
+    #[test]
+    fn test_interpreter() {
+        let mut interpreter = ICInterpreter::new(vec![1, 0, 0, 0, 99]);
+        interpreter.run();
+        assert_eq!(interpreter.terminal_state().memory, vec![2, 0, 0, 0, 99]);
 
-    let mut interpreter = ICInterpreter::new(vec![2, 4, 4, 5, 99, 0]);
-    interpreter.run();
-    assert_eq!(
-        interpreter.terminal_state().memory,
-        vec![2, 4, 4, 5, 99, 9801]
-    );
+        let mut interpreter = ICInterpreter::new(vec![2, 3, 0, 3, 99]);
+        interpreter.run();
+        assert_eq!(interpreter.terminal_state().memory, vec![2, 3, 0, 6, 99]);
 
-    let mut interpreter = ICInterpreter::new(vec![1, 1, 1, 4, 99, 5, 6, 0, 99]);
-    interpreter.run();
-    assert_eq!(
-        interpreter.terminal_state().memory,
-        vec![30, 1, 1, 4, 2, 5, 6, 0, 99]
-    );
+        let mut interpreter = ICInterpreter::new(vec![2, 4, 4, 5, 99, 0]);
+        interpreter.run();
+        assert_eq!(
+            interpreter.terminal_state().memory,
+            vec![2, 4, 4, 5, 99, 9801]
+        );
+
+        let mut interpreter = ICInterpreter::new(vec![1, 1, 1, 4, 99, 5, 6, 0, 99]);
+        interpreter.run();
+        assert_eq!(
+            interpreter.terminal_state().memory,
+            vec![30, 1, 1, 4, 2, 5, 6, 0, 99]
+        );
+    }
+
+    #[test]
+    fn test_part1_solution() {
+        let q2 = Q2;
+        assert_eq!(q2.part1(&load_problem_input(2)), 3_058_646);
+    }
+
+    #[test]
+    fn test_part2_solution() {
+        let q2 = Q2;
+        assert_eq!(q2.part2(&load_problem_input(2)), 8_976);
+    }
 }

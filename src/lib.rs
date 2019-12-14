@@ -3,6 +3,12 @@ use std::path::Path;
 
 pub mod grid;
 pub mod ic;
+pub mod questions;
+
+pub fn load_problem_input(number: usize) -> ProblemInput {
+    let path = format!("data/q{}.txt", number);
+    ProblemInput::new(path).unwrap()
+}
 
 pub trait Extract<T> {
     fn extract(&self) -> Result<T>;

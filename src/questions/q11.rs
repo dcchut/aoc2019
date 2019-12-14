@@ -1,8 +1,8 @@
-use aoc2019::grid::{Direction, Position};
-use aoc2019::ic::interpreter::ICInterpreter;
-use aoc2019::ic::io::Queue;
-use aoc2019::ic::ICPostAction;
-use aoc2019::{Extract, ProblemInput, Solution};
+use crate::grid::{Direction, Position};
+use crate::ic::interpreter::ICInterpreter;
+use crate::ic::io::Queue;
+use crate::ic::ICPostAction;
+use crate::{Extract, ProblemInput, Solution};
 use std::cmp::{max, min};
 use std::collections::HashMap;
 
@@ -105,5 +105,17 @@ impl Solution for Q11 {
         }
 
         0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::load_problem_input;
+
+    #[test]
+    fn test_part1_solution() {
+        let q11 = Q11;
+        assert_eq!(q11.part1(&load_problem_input(11)), 2_056);
     }
 }

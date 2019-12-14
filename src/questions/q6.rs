@@ -1,5 +1,5 @@
+use crate::{Extract, ProblemInput, Solution};
 use anyhow::Result;
-use aoc2019::{Extract, ProblemInput, Solution};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone)]
@@ -142,19 +142,37 @@ impl Solution for Q6 {
     }
 }
 
-#[test]
-fn test_orbit_map() {
-    let input = ProblemInput::from(vec![
-        "COM)B", "B)C", "C)D", "D)E", "E)F", "B)G", "G)H", "D)I", "E)J", "J)K", "K)L",
-    ]);
-    let q6 = Q6 {};
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::load_problem_input;
 
-    assert_eq!(q6.part1(&input), 42);
+    #[test]
+    fn test_orbit_map() {
+        let input = ProblemInput::from(vec![
+            "COM)B", "B)C", "C)D", "D)E", "E)F", "B)G", "G)H", "D)I", "E)J", "J)K", "K)L",
+        ]);
+        let q6 = Q6 {};
 
-    let input = ProblemInput::from(vec![
-        "COM)B", "B)C", "C)D", "D)E", "E)F", "B)G", "G)H", "D)I", "E)J", "J)K", "K)L", "K)YOU",
-        "I)SAN",
-    ]);
+        assert_eq!(q6.part1(&input), 42);
 
-    assert_eq!(q6.part2(&input), 4);
+        let input = ProblemInput::from(vec![
+            "COM)B", "B)C", "C)D", "D)E", "E)F", "B)G", "G)H", "D)I", "E)J", "J)K", "K)L", "K)YOU",
+            "I)SAN",
+        ]);
+
+        assert_eq!(q6.part2(&input), 4);
+    }
+
+    #[test]
+    fn test_part1_solution() {
+        let q6 = Q6;
+        assert_eq!(q6.part1(&load_problem_input(6)), 387_356);
+    }
+
+    #[test]
+    fn test_part2_solution() {
+        let q6 = Q6;
+        assert_eq!(q6.part2(&load_problem_input(6)), 532)
+    }
 }

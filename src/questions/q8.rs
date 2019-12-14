@@ -1,5 +1,4 @@
-#[allow(unused_imports)]
-use aoc2019::{Digits, Extract, FromDigits, ProblemInput, Solution};
+use crate::{ProblemInput, Solution};
 
 pub struct Q8;
 
@@ -80,5 +79,17 @@ impl Solution for Q8 {
         }
 
         0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::load_problem_input;
+
+    #[test]
+    fn test_part1_solution() {
+        let q8 = Q8;
+        assert_eq!(q8.part1(&load_problem_input(8)), 1_064);
     }
 }

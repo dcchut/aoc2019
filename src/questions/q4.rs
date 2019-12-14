@@ -1,4 +1,4 @@
-use aoc2019::{ProblemInput, Solution};
+use crate::{ProblemInput, Solution};
 
 pub struct Q4;
 
@@ -68,16 +68,32 @@ impl Solution for Q4 {
     }
 }
 
-#[test]
-fn test_satisfying_numbers() {
-    let s1 = satisfying_numbers(100_000, 999_999, false);
-    let s2 = satisfying_numbers(100_000, 999_999, true);
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::load_problem_input;
+    #[test]
+    fn test_satisfying_numbers() {
+        let s1 = satisfying_numbers(100_000, 999_999, false);
+        let s2 = satisfying_numbers(100_000, 999_999, true);
 
-    assert!(s1.contains(&111_111));
-    assert!(!s1.contains(&223_450));
-    assert!(!s1.contains(&123_789));
+        assert!(s1.contains(&111_111));
+        assert!(!s1.contains(&223_450));
+        assert!(!s1.contains(&123_789));
 
-    assert!(s2.contains(&112_223));
-    assert!(!s2.contains(&123_444));
-    assert!(s2.contains(&111_122));
+        assert!(s2.contains(&112_223));
+        assert!(!s2.contains(&123_444));
+        assert!(s2.contains(&111_122));
+    }
+    #[test]
+    fn test_part1_solution() {
+        let q4 = Q4;
+        assert_eq!(q4.part1(&load_problem_input(4)), 966);
+    }
+
+    #[test]
+    fn test_part2_solution() {
+        let q4 = Q4;
+        assert_eq!(q4.part2(&load_problem_input(3)), 628);
+    }
 }

@@ -1,6 +1,6 @@
-use aoc2019::ic::interpreter::ICInterpreter;
-use aoc2019::ic::io::Queue;
-use aoc2019::{Extract, ProblemInput, Solution};
+use crate::ic::interpreter::ICInterpreter;
+use crate::ic::io::Queue;
+use crate::{Extract, ProblemInput, Solution};
 
 pub struct Q9;
 
@@ -17,5 +17,23 @@ impl Solution for Q9 {
         interpreter.run_with_inputs(vec![2]);
 
         interpreter.outputs.pop().unwrap()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::load_problem_input;
+
+    #[test]
+    fn test_part1_solution() {
+        let q9 = Q9;
+        assert_eq!(q9.part1(&load_problem_input(9)), 2_745_604_242);
+    }
+
+    #[test]
+    fn test_part2_solution() {
+        let q9 = Q9;
+        assert_eq!(q9.part2(&load_problem_input(9)), 51_135);
     }
 }

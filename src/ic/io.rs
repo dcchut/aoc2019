@@ -49,6 +49,14 @@ impl ICOutput {
     pub fn last(&self) -> Option<i64> {
         self.outputs.back().cloned()
     }
+
+    pub fn len(&self) -> usize {
+        self.outputs.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.outputs.is_empty()
+    }
 }
 
 impl Default for ICOutput {
