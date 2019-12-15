@@ -2,6 +2,53 @@ use crate::{Extract, ProblemInput, Solution};
 use anyhow::Result;
 use std::collections::{HashMap, HashSet};
 
+pub struct Q6;
+
+impl Solution for Q6 {
+    fn part1(&self, lines: &ProblemInput) -> i64 {
+        let mut orbit_graph: OrbitGraph = lines.extract().unwrap();
+
+        (0..orbit_graph.size())
+            .map(|index| orbit_graph.ancestors(index).len())
+            .sum::<usize>() as i64
+    }
+
+    fn part2(&self, lines: &ProblemInput) -> i64 {
+        let mut orbit_graph: OrbitGraph = lines.extract().unwrap();
+
+        // Find where "YOU" and "SAN" are
+        let you_index = orbit_graph.insert("YOU");
+        let san_index = orbit_graph.insert("SAN");
+
+        // Find their parent nodes
+        let you_parent_index = orbit_graph.lineage[&you_index];
+        let san_parent_index = orbit_graph.lineage[&san_index];
+
+        // Find all ancestors of you and san
+        let you_ancestors = orbit_graph.ancestors(you_parent_index);
+        let san_ancestors = orbit_graph.ancestors(san_parent_index);
+
+        // Create a hashset of SAN-cestors for faster lookup
+        let san_ancestors_set: HashSet<usize> = san_ancestors.iter().cloned().collect();
+
+        // Find the first entry of you_ancestors that occurs in san_ancestors_set
+        let (you_length, key) = you_ancestors
+            .into_iter()
+            .enumerate()
+            .find(|(_, item)| san_ancestors_set.contains(item))
+            .unwrap();
+        // Then find the first time it occurs in san_ancestors
+        let (san_length, _) = san_ancestors
+            .into_iter()
+            .enumerate()
+            .find(|(_, item)| item == &key)
+            .unwrap();
+
+        // Since the vec is zero-indexed, we need to add 1 + 1 to get the number of ancestors
+        (you_length + san_length + 2) as i64
+    }
+}
+
 #[derive(Debug, Clone)]
 struct OrbitGraph {
     names: Vec<String>,
@@ -92,53 +139,6 @@ impl Extract<OrbitGraph> for ProblemInput {
         }
 
         Ok(orbit_graph)
-    }
-}
-
-pub struct Q6;
-
-impl Solution for Q6 {
-    fn part1(&self, lines: &ProblemInput) -> i64 {
-        let mut orbit_graph: OrbitGraph = lines.extract().unwrap();
-
-        (0..orbit_graph.size())
-            .map(|index| orbit_graph.ancestors(index).len())
-            .sum::<usize>() as i64
-    }
-
-    fn part2(&self, lines: &ProblemInput) -> i64 {
-        let mut orbit_graph: OrbitGraph = lines.extract().unwrap();
-
-        // Find where "YOU" and "SAN" are
-        let you_index = orbit_graph.insert("YOU");
-        let san_index = orbit_graph.insert("SAN");
-
-        // Find their parent nodes
-        let you_parent_index = orbit_graph.lineage[&you_index];
-        let san_parent_index = orbit_graph.lineage[&san_index];
-
-        // Find all ancestors of you and san
-        let you_ancestors = orbit_graph.ancestors(you_parent_index);
-        let san_ancestors = orbit_graph.ancestors(san_parent_index);
-
-        // Create a hashset of SAN-cestors for faster lookup
-        let san_ancestors_set: HashSet<usize> = san_ancestors.iter().cloned().collect();
-
-        // Find the first entry of you_ancestors that occurs in san_ancestors_set
-        let (you_length, key) = you_ancestors
-            .into_iter()
-            .enumerate()
-            .find(|(_, item)| san_ancestors_set.contains(item))
-            .unwrap();
-        // Then find the first time it occurs in san_ancestors
-        let (san_length, _) = san_ancestors
-            .into_iter()
-            .enumerate()
-            .find(|(_, item)| item == &key)
-            .unwrap();
-
-        // Since the vec is zero-indexed, we need to add 1 + 1 to get the number of ancestors
-        (you_length + san_length + 2) as i64
     }
 }
 

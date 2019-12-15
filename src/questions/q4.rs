@@ -2,6 +2,16 @@ use crate::{ProblemInput, Solution};
 
 pub struct Q4;
 
+impl Solution for Q4 {
+    fn part1(&self, _lines: &ProblemInput) -> i64 {
+        satisfying_numbers(264_793, 803_935, false).len() as i64
+    }
+
+    fn part2(&self, _lines: &ProblemInput) -> i64 {
+        satisfying_numbers(264_793, 803_935, true).len() as i64
+    }
+}
+
 fn satisfying_numbers(min: usize, max: usize, isolate: bool) -> Vec<usize> {
     let mut numbers = Vec::new();
 
@@ -56,16 +66,6 @@ fn satisfying_numbers(min: usize, max: usize, isolate: bool) -> Vec<usize> {
     }
 
     numbers
-}
-
-impl Solution for Q4 {
-    fn part1(&self, _lines: &ProblemInput) -> i64 {
-        satisfying_numbers(264_793, 803_935, false).len() as i64
-    }
-
-    fn part2(&self, _lines: &ProblemInput) -> i64 {
-        satisfying_numbers(264_793, 803_935, true).len() as i64
-    }
 }
 
 #[cfg(test)]

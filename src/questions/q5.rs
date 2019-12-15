@@ -3,22 +3,20 @@ use crate::{Extract, ProblemInput, Solution};
 
 pub struct Q5;
 
-impl Q5 {
-    pub fn run(lines: &ProblemInput, input: i64) -> i64 {
-        let mut interpreter: ICInterpreter = lines.extract().unwrap();
-        interpreter.run_with_inputs(vec![input]);
-        interpreter.outputs.last().unwrap()
-    }
-}
-
 impl Solution for Q5 {
     fn part1(&self, lines: &ProblemInput) -> i64 {
-        Self::run(lines, 1)
+        run(lines, 1)
     }
 
     fn part2(&self, lines: &ProblemInput) -> i64 {
-        Self::run(lines, 5)
+        run(lines, 5)
     }
+}
+
+fn run(lines: &ProblemInput, input: i64) -> i64 {
+    let mut interpreter: ICInterpreter = lines.extract().unwrap();
+    interpreter.run_with_inputs(vec![input]);
+    interpreter.outputs.last().unwrap()
 }
 
 #[cfg(test)]

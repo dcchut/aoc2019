@@ -5,15 +5,6 @@ use std::collections::HashMap;
 
 pub struct Q13;
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
-pub enum Tile {
-    Empty,
-    Wall,   // Indestructible
-    Block,  // Can be broken
-    Paddle, // Indestructible
-    Ball,   // Moves diagonally and bounces off objects
-}
-
 impl Solution for Q13 {
     fn part1(&self, lines: &ProblemInput) -> i64 {
         let mut interpreter: ICInterpreter = lines.extract().unwrap();
@@ -106,6 +97,15 @@ impl Solution for Q13 {
             });
         }
     }
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+pub enum Tile {
+    Empty,
+    Wall,   // Indestructible
+    Block,  // Can be broken
+    Paddle, // Indestructible
+    Ball,   // Moves diagonally and bounces off objects
 }
 
 #[cfg(test)]

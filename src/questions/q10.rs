@@ -5,6 +5,92 @@ use num::Integer;
 use ordered_float::OrderedFloat;
 use std::collections::{HashMap, HashSet};
 
+pub struct Q10;
+
+impl Solution for Q10 {
+    fn part1(&self, lines: &ProblemInput) -> i64 {
+        let map: AsteroidMap = lines.extract().unwrap();
+
+        let n = map.asteroids.len();
+        let mut blockers: HashMap<Position, HashSet<Position>> = HashMap::new();
+
+        for &asteroid in map.asteroids.iter() {
+            let curr_blockers = blockers.entry(asteroid).or_insert_with(HashSet::new);
+
+            for &other_asteroid in map.asteroids.iter() {
+                if asteroid == other_asteroid || curr_blockers.contains(&other_asteroid) {
+                    continue;
+                }
+
+                let delta = other_asteroid - asteroid;
+                let gcd = delta.x.gcd(&delta.y);
+                let delta = Position::new(delta.x / gcd, delta.y / gcd);
+
+                let mut current = other_asteroid + delta;
+                while map.in_bounds(current) {
+                    // check if the current position is an asteroid
+                    if map.contains(current) {
+                        // mark this as a blocker
+                        curr_blockers.insert(current);
+                    }
+                    current = current + delta;
+                }
+            }
+        }
+
+        let counts = blockers
+            .into_iter()
+            .map(|(pos, blockers)| (pos, blockers.len()))
+            .collect::<Vec<_>>()
+            .into_iter()
+            .min_by_key(|&(_, count)| count)
+            .unwrap();
+
+        (n - counts.1 - 1) as i64
+    }
+
+    fn part2(&self, lines: &ProblemInput) -> i64 {
+        let map: AsteroidMap = lines.extract().unwrap();
+        let mut angle_map = angle_map(&map);
+
+        // We only care about the point (11, 11).
+        let ordered_points = angle_map
+            .iter_mut()
+            .find(|pos| pos.0.x == 11 && pos.0.y == 11)
+            .unwrap()
+            .1;
+
+        let mut counter = 0;
+        while !ordered_points.is_empty() {
+            // Keep track of the last angle we saw
+            let mut last_angle = OrderedFloat(-1000.0);
+            let mut ix = 0;
+
+            while ix < ordered_points.len() {
+                let pt = ordered_points[ix];
+                let of = OrderedFloat(pt.1);
+
+                if of != last_angle {
+                    last_angle = of;
+
+                    // If we've found the 200th laser victim, we're done.
+                    counter += 1;
+                    if counter == 200 {
+                        return pt.0.x * 100 + pt.0.y;
+                    }
+
+                    // Otherwise DESTROY this one.
+                    ordered_points.remove(ix);
+                } else {
+                    // If we haven't found another angle, then we're looking at asteroids hidden behind other asteroids.
+                    ix += 1;
+                }
+            }
+        }
+        0
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct AsteroidMap {
     pub asteroids: HashSet<Position>,
@@ -99,92 +185,6 @@ fn angle_map(map: &AsteroidMap) -> HashMap<Position, Vec<(Position, f64, i64)>> 
     }
 
     by_angle
-}
-
-pub struct Q10;
-
-impl Solution for Q10 {
-    fn part1(&self, lines: &ProblemInput) -> i64 {
-        let map: AsteroidMap = lines.extract().unwrap();
-
-        let n = map.asteroids.len();
-        let mut blockers: HashMap<Position, HashSet<Position>> = HashMap::new();
-
-        for &asteroid in map.asteroids.iter() {
-            let curr_blockers = blockers.entry(asteroid).or_insert_with(HashSet::new);
-
-            for &other_asteroid in map.asteroids.iter() {
-                if asteroid == other_asteroid || curr_blockers.contains(&other_asteroid) {
-                    continue;
-                }
-
-                let delta = other_asteroid - asteroid;
-                let gcd = delta.x.gcd(&delta.y);
-                let delta = Position::new(delta.x / gcd, delta.y / gcd);
-
-                let mut current = other_asteroid + delta;
-                while map.in_bounds(current) {
-                    // check if the current position is an asteroid
-                    if map.contains(current) {
-                        // mark this as a blocker
-                        curr_blockers.insert(current);
-                    }
-                    current = current + delta;
-                }
-            }
-        }
-
-        let counts = blockers
-            .into_iter()
-            .map(|(pos, blockers)| (pos, blockers.len()))
-            .collect::<Vec<_>>()
-            .into_iter()
-            .min_by_key(|&(_, count)| count)
-            .unwrap();
-
-        (n - counts.1 - 1) as i64
-    }
-
-    fn part2(&self, lines: &ProblemInput) -> i64 {
-        let map: AsteroidMap = lines.extract().unwrap();
-        let mut angle_map = angle_map(&map);
-
-        // We only care about the point (11, 11).
-        let ordered_points = angle_map
-            .iter_mut()
-            .find(|pos| pos.0.x == 11 && pos.0.y == 11)
-            .unwrap()
-            .1;
-
-        let mut counter = 0;
-        while !ordered_points.is_empty() {
-            // Keep track of the last angle we saw
-            let mut last_angle = OrderedFloat(-1000.0);
-            let mut ix = 0;
-
-            while ix < ordered_points.len() {
-                let pt = ordered_points[ix];
-                let of = OrderedFloat(pt.1);
-
-                if of != last_angle {
-                    last_angle = of;
-
-                    // If we've found the 200th laser victim, we're done.
-                    counter += 1;
-                    if counter == 200 {
-                        return pt.0.x * 100 + pt.0.y;
-                    }
-
-                    // Otherwise DESTROY this one.
-                    ordered_points.remove(ix);
-                } else {
-                    // If we haven't found another angle, then we're looking at asteroids hidden behind other asteroids.
-                    ix += 1;
-                }
-            }
-        }
-        0
-    }
 }
 
 #[cfg(test)]

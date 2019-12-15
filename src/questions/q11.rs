@@ -6,6 +6,45 @@ use crate::{Extract, ProblemInput, Solution};
 use std::cmp::{max, min};
 use std::collections::HashMap;
 
+pub struct Q11;
+
+impl Solution for Q11 {
+    fn part1(&self, lines: &ProblemInput) -> i64 {
+        paint_ship(lines, 0).len() as i64
+    }
+
+    fn part2(&self, lines: &ProblemInput) -> i64 {
+        let painting = paint_ship(lines, 1);
+
+        // find some bounds on the position
+        let mut minx = 999_999;
+        let mut maxx = -999_999;
+        let mut miny = 999_999;
+        let mut maxy = -999_999;
+
+        for pos in painting.keys() {
+            minx = min(minx, pos.x);
+            maxx = max(maxx, pos.x);
+            miny = min(miny, pos.y);
+            maxy = max(maxy, pos.y);
+        }
+
+        // The coordinate system is upside down, so reverse our y direction.
+        for y in (miny..=maxy).rev() {
+            for x in minx..=maxx {
+                if painting.get(&Position::new(x, y)).cloned().unwrap_or(1) == 1 {
+                    print!("#");
+                } else {
+                    print!(" ");
+                }
+            }
+            println!();
+        }
+
+        0
+    }
+}
+
 fn paint_ship(lines: &ProblemInput, starting_color: i64) -> HashMap<Position, i64> {
     let mut interpreter: ICInterpreter = lines.extract().unwrap();
     // on input and output we want to halt program execution
@@ -67,45 +106,6 @@ fn paint_ship(lines: &ProblemInput, starting_color: i64) -> HashMap<Position, i6
     }
 
     paint
-}
-
-pub struct Q11;
-
-impl Solution for Q11 {
-    fn part1(&self, lines: &ProblemInput) -> i64 {
-        paint_ship(lines, 0).len() as i64
-    }
-
-    fn part2(&self, lines: &ProblemInput) -> i64 {
-        let painting = paint_ship(lines, 1);
-
-        // find some bounds on the position
-        let mut minx = 999_999;
-        let mut maxx = -999_999;
-        let mut miny = 999_999;
-        let mut maxy = -999_999;
-
-        for pos in painting.keys() {
-            minx = min(minx, pos.x);
-            maxx = max(maxx, pos.x);
-            miny = min(miny, pos.y);
-            maxy = max(maxy, pos.y);
-        }
-
-        // The coordinate system is upside down, so reverse our y direction.
-        for y in (miny..=maxy).rev() {
-            for x in minx..=maxx {
-                if painting.get(&Position::new(x, y)).cloned().unwrap_or(1) == 1 {
-                    print!("#");
-                } else {
-                    print!(" ");
-                }
-            }
-            println!();
-        }
-
-        0
-    }
 }
 
 #[cfg(test)]
