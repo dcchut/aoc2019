@@ -2,6 +2,7 @@ use crate::grid::Direction;
 use crate::grid::Position;
 use crate::ic::interpreter::ICInterpreter;
 use crate::ic::io::Queue;
+use crate::ic::state::ICState;
 use crate::ic::ICPostAction;
 use crate::{Extract, ProblemInput, Solution};
 use std::collections::HashMap;
@@ -17,7 +18,7 @@ impl Solution for Q15 {
         discoverer.discover();
 
         let oxygen = discoverer.oxygen.unwrap();
-        discoverer.best_so_far.get(&oxygen).unwrap().len() as i64
+        *discoverer.best_so_far.get(&oxygen).unwrap()
     }
 
     fn part2(&self, lines: &ProblemInput) -> i64 {
@@ -71,7 +72,9 @@ pub struct Discoverer {
     /// Keep track of blocked positions
     pub blocked: HashSet<Position>,
     /// Keep track of the quickest directions to get to each position
-    pub best_so_far: HashMap<Position, Vec<Direction>>,
+    pub best_so_far: HashMap<Position, i64>,
+    /// Keep track of the interpreter memory at each position
+    pub states: HashMap<Position, ICState>,
     /// Our IC interpreter
     pub interpreter: ICInterpreter,
     /// Location of the oxygen
@@ -94,13 +97,14 @@ impl Discoverer {
         work.push_front((current_position, Direction::all()));
 
         let mut best_so_far = HashMap::new();
-        best_so_far.insert(current_position, vec![]);
+        best_so_far.insert(current_position, 0);
 
         Self {
             current_position,
             work,
             blocked: HashSet::new(),
             best_so_far,
+            states: HashMap::new(),
             interpreter,
             oxygen: None,
         }
@@ -114,6 +118,13 @@ impl Discoverer {
                 self.move_to(position);
             }
 
+            // insert the current position into our states hashmap
+            if !self.states.contains_key(&position) {
+                self.states.insert(position, self.interpreter.state.clone());
+            }
+
+            let current_best_so_far = *self.best_so_far.get(&position).unwrap();
+
             // keep track of candidate directions for the current position (in case we come back here)
             let mut future_candidation_directions = candidate_directions.clone();
 
@@ -122,13 +133,17 @@ impl Discoverer {
                 future_candidation_directions.remove(&direction);
                 let candidate_position = position.go(direction);
 
-                // we never want to explore to a position we know is blocked, or that we've been to before.
-                // since we're doing a BST we're guaranteed to find the shortest path to each position the first time
-                // we arrive there
-                if self.blocked.contains(&candidate_position)
-                    || self.best_so_far.contains_key(&candidate_position)
-                {
+                // we never want to explore to a position we know is blocked
+                if self.blocked.contains(&candidate_position) {
                     continue;
+                }
+
+                // we never want to explore to a position we've been before if the current path is longer than one
+                // we've already found for that position
+                if let Some(&candidate_best_so_far) = self.best_so_far.get(&candidate_position) {
+                    if candidate_best_so_far <= current_best_so_far + 1 {
+                        continue;
+                    }
                 }
 
                 // attempt to move in the selected direction
@@ -142,16 +157,16 @@ impl Discoverer {
                     continue;
                 }
 
+                self.current_position = candidate_position;
+
                 // did we find the oxygen?
                 if output == 2 {
                     self.oxygen = Some(candidate_position);
                 }
 
                 // otherwise update `self.best_so_far` for the new position
-                let mut current_best_so_far = self.best_so_far.get(&position).unwrap().clone();
-                current_best_so_far.push(direction);
                 self.best_so_far
-                    .insert(candidate_position, current_best_so_far);
+                    .insert(candidate_position, current_best_so_far + 1);
 
                 // put the old position at the back onto our work queue if there are still unexplored directions
                 if !future_candidation_directions.is_empty() {
@@ -168,16 +183,8 @@ impl Discoverer {
     }
 
     pub fn move_to(&mut self, position: Position) {
-        self.interpreter.reset();
-
-        for &directions in self.best_so_far.get(&position).unwrap() {
-            self.interpreter
-                .run_with_inputs(vec![direction_to_int(directions)]);
-        }
-
-        // clear outputs TODO encapsulate
-        self.interpreter.outputs.outputs.clear();
-
+        // update the interpreter to the expected state
+        self.interpreter.state = self.states.get(&position).unwrap().clone();
         self.current_position = position;
     }
 }
