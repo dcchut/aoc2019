@@ -28,6 +28,17 @@ impl Direction {
         // the compiler will take care of it
         self.left().left().left()
     }
+
+    #[inline(always)]
+    pub fn all() -> HashSet<Self> {
+        let mut all = HashSet::new();
+        all.insert(Direction::Left);
+        all.insert(Direction::Right);
+        all.insert(Direction::Up);
+        all.insert(Direction::Down);
+
+        all
+    }
 }
 
 impl FromStr for Direction {
