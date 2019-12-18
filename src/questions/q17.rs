@@ -131,7 +131,7 @@ impl Solution for Q17 {
         let mut interpreter: ICInterpreter = lines.extract().unwrap();
 
         interpreter.state.memory[0] = 2;
-        let inputs : Vec<i64> = vec![
+        let inputs: Vec<i64> = vec![
             ord('A'),
             ord(','),
             ord('B'),
