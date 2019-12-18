@@ -60,7 +60,7 @@ pub trait FromDigits {
     fn from_digits(&self) -> i64;
 }
 
-impl FromDigits for Vec<i64> {
+impl FromDigits for &[i64] {
     fn from_digits(&self) -> i64 {
         self.iter()
             .cloned()
@@ -69,6 +69,12 @@ impl FromDigits for Vec<i64> {
             .join("")
             .parse()
             .unwrap()
+    }
+}
+
+impl FromDigits for Vec<i64> {
+    fn from_digits(&self) -> i64 {
+        self.as_slice().from_digits()
     }
 }
 
