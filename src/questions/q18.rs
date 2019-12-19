@@ -1,4 +1,4 @@
-use crate::grid::{Position, Direction};
+use crate::grid::{Direction, Position};
 use crate::{Extract, ProblemInput, Solution};
 use anyhow::Result;
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -11,7 +11,7 @@ enum DungeonInteractive {
     Door(char),
 }
 
-#[derive(Debug,  Clone)]
+#[derive(Debug, Clone)]
 struct DungeonMap {
     pub width: i64,
     pub height: i64,
@@ -34,7 +34,6 @@ impl Extract<DungeonMap> for ProblemInput {
         let mut interaction = HashMap::new();
         let mut entrance = None;
         let mut doors = 0;
-
 
         for y in 0..height {
             for x in 0..width {
@@ -75,9 +74,15 @@ impl Solution for Q18 {
 
         // do a BFS starting at the entrance
         let mut state = VecDeque::new();
-        state.push_front((Position::new(0, 0), 0, HashSet::new(), HashSet::new())); // current position, acquired keys
+        state.push_front((
+            dm.entrance,
+            0,
+            HashSet::new(),
+            HashSet::new(),
+            Position::new(-999, -999),
+        )); // current position, acquired keys
 
-        while let Some((position, steps, visited, keys)) = state.pop_front() {
+        while let Some((position, steps, visited, keys, last_position)) = state.pop_front() {
             // are we done
             if visited.len() == dm.doors as usize {
                 return steps;
@@ -96,7 +101,13 @@ impl Solution for Q18 {
                 if let Some(interaction) = dm.interaction.get(&new_position) {
                     if let DungeonInteractive::Key(c) = interaction {
                         // yay!
-                        let mut new_entry = (new_position, steps+1, visited.clone(), keys.clone());
+                        let mut new_entry = (
+                            new_position,
+                            steps + 1,
+                            visited.clone(),
+                            keys.clone(),
+                            position,
+                        );
                         new_entry.3.insert(*c);
 
                         state.push_back(new_entry);
@@ -104,14 +115,29 @@ impl Solution for Q18 {
                         // do we have the key for this door?
                         if keys.contains(&c.to_ascii_lowercase()) {
                             // we may go here
-                            let mut new_entry = (new_position, steps, visited.clone(), keys.clone());
+                            let mut new_entry = (
+                                new_position,
+                                steps + 1,
+                                visited.clone(),
+                                keys.clone(),
+                                position,
+                            );
                             new_entry.2.insert(*c);
 
                             state.push_back(new_entry);
                         }
                     }
+                } else if new_position != last_position {
+                    // plain ol' movement
+                    let new_entry = (
+                        new_position,
+                        steps + 1,
+                        visited.clone(),
+                        keys.clone(),
+                        position,
+                    );
+                    state.push_back(new_entry);
                 }
-
             }
         }
 

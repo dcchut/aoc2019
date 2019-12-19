@@ -52,6 +52,7 @@ fn main() -> Result<()> {
         Box::new(Q16 {}),
         Box::new(Q17 {}),
         Box::new(Q18 {}),
+        Box::new(Q19 {}),
     ];
 
     let solutions: &'static [Box<dyn Solution>] = Box::leak(solutions.into_boxed_slice());
