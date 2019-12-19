@@ -43,13 +43,6 @@ impl Solution for Q19 {
     }
 
     fn part2(&self, lines: &ProblemInput) -> i64 {
-        // starting at (50, 50) ->
-        // find the first x value
-        //        let xmin = rprompt::prompt_reply_stdout("XMIN: ")?;
-        //        let xmax = rprompt::prompt_reply_stdout("XMAX: ")?;
-        //        let ymin = rprompt::prompt_reply_stdout("YMIN: ")?;
-        //        let ymax = rprompt::pr
-        //
         let mut interpreter: ICInterpreter = lines.extract().unwrap();
         interpreter.postprocess(4, |_, fz: &mut ICPostAction| {
             // convert output finalization continue states to terminate
