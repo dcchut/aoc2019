@@ -1,4 +1,3 @@
-use crate::grid::Position;
 use crate::ic::interpreter::ICInterpreter;
 use crate::ic::io::Queue;
 use crate::ic::ICPostAction;
@@ -55,7 +54,7 @@ impl Solution for Q19 {
 
         'outer: for y in 600..800 {
             // Using the power of science, one can see that there will pretty much always be a # at 1.94 * y
-            let mut test_x = ((y as f64) * 1.94).ceil() as i64;
+            let test_x = ((y as f64) * 1.94).ceil() as i64;
 
             let mut delta = 0;
             // find the left end for this y

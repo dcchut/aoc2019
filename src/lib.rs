@@ -3,6 +3,7 @@ use std::path::Path;
 
 pub mod grid;
 pub mod ic;
+pub mod map;
 pub mod questions;
 
 pub fn load_problem_input(number: usize) -> ProblemInput {
