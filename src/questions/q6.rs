@@ -1,6 +1,6 @@
 use crate::{Extract, ProblemInput, Solution};
 use anyhow::Result;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 pub struct Q6;
 
@@ -21,8 +21,8 @@ impl Solution for Q6 {
         let san_index = orbit_graph.insert("SAN");
 
         // Find their parent nodes
-        let you_parent_index = orbit_graph.lineage[&you_index];
-        let san_parent_index = orbit_graph.lineage[&san_index];
+        let you_parent_index = orbit_graph.lineage[you_index].unwrap();
+        let san_parent_index = orbit_graph.lineage[san_index].unwrap();
 
         // Find all ancestors of you and san
         let you_ancestors = orbit_graph.ancestors(you_parent_index);
@@ -52,8 +52,8 @@ impl Solution for Q6 {
 #[derive(Debug, Clone)]
 struct OrbitGraph {
     names: Vec<String>,
-    lineage: HashMap<usize, usize>,
-    ancestors: HashMap<usize, Vec<usize>>,
+    lineage: Vec<Option<usize>>,
+    ancestors: Vec<Option<Vec<usize>>>,
 }
 
 impl OrbitGraph {
@@ -75,12 +75,14 @@ impl OrbitGraph {
 
         // otherwise insert it at the end and return the inserted index
         self.names.push(s);
+        self.ancestors.push(None);
+        self.lineage.push(None);
         self.names.len() - 1
     }
 
     /// Records a parent -> child relationship in the `OrbitGraph`.
     pub fn add_relationship(&mut self, parent: usize, child: usize) {
-        self.lineage.insert(child, parent);
+        self.lineage[child] = Some(parent);
     }
 
     /// Returns the number of nodes in the `OrbitGraph`.
@@ -92,20 +94,21 @@ impl OrbitGraph {
     pub fn new() -> Self {
         Self {
             names: Vec::new(),
-            lineage: HashMap::new(),
-            ancestors: HashMap::new(),
+            lineage: Vec::new(),
+            ancestors: Vec::new(),
         }
     }
 
     /// Returns a vector containing all ancestors of a given node.
     pub fn ancestors(&mut self, node: usize) -> Vec<usize> {
-        // If we've already computed how many ancestors this node has, return then
-        if let Some(ancestors) = self.ancestors.get(&node) {
+        let ancestors = self.ancestors.get(node).unwrap();
+
+        if let Some(ancestors) = ancestors {
             return ancestors.clone();
         }
 
         // Otherwise, compute recursively
-        let ancestors = if let Some(parent) = self.lineage.get(&node).cloned() {
+        let ancestors = if let Some(parent) = self.lineage.get(node).cloned().unwrap() {
             let mut parental_ancestors = vec![parent];
             parental_ancestors.extend(self.ancestors(parent));
 
@@ -114,7 +117,7 @@ impl OrbitGraph {
             vec![]
         };
 
-        self.ancestors.insert(node, ancestors.clone());
+        self.ancestors[node] = Some(ancestors.clone());
         ancestors
     }
 }
