@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 rprompt = "1.0"
 anyhow = "1.0"
-rayon = "1.3"
+rayon = "1.4"
 crossbeam = "0.8"
 num = "0.3"
 ordered-float = "2.0"
