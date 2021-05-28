@@ -271,14 +271,15 @@ dependencies = [
 
 [[package]]
 name = "pathfinding"
-version = "2.1.4"
+version = "2.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d1dcdd920c7280ca99a20cdee430ffb9883fcd890867da058d9d9a5af5cc179d"
+checksum = "35ad5d623c75934da932e7e60ae804af13e6442f6b170047d17b8bb542c9cb6d"
 dependencies = [
  "fixedbitset",
  "indexmap",
  "itertools",
  "num-traits",
+ "rustc-hash",
 ]
 
 [[package]]
@@ -311,6 +312,12 @@ name = "rprompt"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b386f4748bdae2aefc96857f5fda07647f851d089420e577831e2a14b45230f8"
+
+[[package]]
+name = "rustc-hash"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
 
 [[package]]
 name = "scopeguard"
