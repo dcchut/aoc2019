@@ -272,9 +272,9 @@ dependencies = [
 
 [[package]]
 name = "pathfinding"
-version = "2.2.2"
+version = "3.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "277bd6900ba1e7e578f320b4f78b9443925cc4a5492c9e1327774df044ec4607"
+checksum = "59e63442a9d0646452eedb10c4040fe61d2ace7ca9cead53b065072f3f8ec066"
 dependencies = [
  "fixedbitset",
  "indexmap",
