@@ -63,7 +63,7 @@ fn main() -> Result<()> {
 
     let solutions: &'static [Box<dyn Solution>] = Box::leak(solutions.into_boxed_slice());
 
-    let reply = rprompt::prompt_reply_stdout("Problem: ")?;
+    let reply = rprompt::prompt_reply("Problem: ")?;
 
     if let Ok(index) = reply.parse::<usize>() {
         let index = index - 1;
